@@ -21,6 +21,7 @@ export interface CreateListingData {
   latitude?: number
   longitude?: number
   amenities?: string[]
+  images?: string[]
 }
 
 /**
@@ -181,17 +182,41 @@ export async function createListing(listingData: CreateListingData): Promise<any
     }
 
     // Créer l'annonce avec l'ID de l'utilisateur
+    const { images = [], ...listingValues } = listingData
+
     const { data, error } = await supabase
       .from('listings')
       .insert({
-        ...listingData,
+        ...listingValues,
         user_id: user.id,
       })
       .select()
       .single()
 
     if (error) throw error
-    return data
+
+    if (images.length > 0) {
+      const imageEntries = images
+        .filter((url) => Boolean(url))
+        .map((url, index) => ({
+          listing_id: data.id,
+          url,
+          sort_order: index,
+        }))
+
+      if (imageEntries.length > 0) {
+        const { error: imageError } = await supabase.from('listing_images').insert(imageEntries)
+        if (imageError) {
+          console.error('Error inserting listing images:', imageError)
+          throw imageError
+        }
+      }
+    }
+
+    return {
+      ...data,
+      images,
+    }
   } catch (error: any) {
     console.error('Error creating listing:', error)
     throw error

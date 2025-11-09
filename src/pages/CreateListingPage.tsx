@@ -18,11 +18,13 @@ import {
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import SEO from '@/components/seo/SEO'
 import ImageUploader from '@/components/forms/ImageUploader'
 import AmenitiesSelector from '@/components/forms/AmenitiesSelector'
+import { createListing } from '@/services/listingService'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
@@ -37,8 +39,8 @@ L.Icon.Default.mergeOptions({
 interface CreateListingFormData {
   title: string
   description: string
-  property_type: string
-  listing_type: string
+  property_type: 'appartement' | 'maison' | 'terrain' | 'bureau' | 'commerce'
+  listing_type: 'location' | 'vente'
   price: string
   bedrooms: string
   bathrooms: string
@@ -76,15 +78,43 @@ const NEIGHBORHOODS_BY_CITY: Record<string, string[]> = {
 
 const CITY_OPTIONS = ['Lomé', 'Cotonou', 'Abidjan', 'Accra', 'Dakar']
 
+const PROPERTY_OPTIONS: Array<{
+  value: CreateListingFormData['property_type']
+  label: string
+}> = [
+  { value: 'appartement', label: 'Appartement' },
+  { value: 'maison', label: 'Maison / Villa' },
+  { value: 'terrain', label: 'Terrain' },
+  { value: 'bureau', label: 'Bureau' },
+  { value: 'commerce', label: 'Local commercial' },
+]
+
 export default function CreateListingPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
+  const createListingMutation = useMutation({
+    mutationFn: createListing,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['user-listings'] })
+      toast.success('Annonce créée avec succès !')
+      navigate('/mes-annonces')
+    },
+    onError: (error: any) => {
+      console.error('Create listing error:', error)
+      toast.error(
+        error?.message ||
+          "Impossible d'enregistrer l'annonce pour le moment"
+      )
+    },
+  })
+  const loading = createListingMutation.isPending
   const [formData, setFormData] = useState<CreateListingFormData>({
     title: '',
     description: '',
-    property_type: 'apartment',
-    listing_type: 'rent',
+    property_type: 'appartement',
+    listing_type: 'location',
     price: '',
     bedrooms: '',
     bathrooms: '',
@@ -101,24 +131,72 @@ export default function CreateListingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!user) {
       toast.error('Vous devez être connecté pour publier une annonce')
       navigate('/connexion')
       return
     }
 
-    setLoading(true)
-    try {
-      // TODO: Implement listing creation with Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('Annonce créée avec succès !')
-      navigate('/mes-annonces')
-    } catch (error) {
-      toast.error('Erreur lors de la création de l\'annonce')
-    } finally {
-      setLoading(false)
+    const priceValue = Number(formData.price)
+    const roomsValue = Number(formData.bedrooms)
+    const bathroomsValue = Number(formData.bathrooms)
+    const surfaceValue = Number(formData.surface_area)
+
+    if (!formData.title.trim()) {
+      toast.error('Veuillez renseigner un titre pour votre annonce')
+      return
     }
+
+    if (!formData.city.trim()) {
+      toast.error('Veuillez indiquer la ville du bien')
+      return
+    }
+
+    if (!formData.address.trim()) {
+      toast.error('Veuillez préciser l\'adresse du bien')
+      return
+    }
+
+    if (Number.isNaN(priceValue) || priceValue <= 0) {
+      toast.error('Veuillez entrer un prix valide')
+      return
+    }
+
+    if (Number.isNaN(roomsValue) || roomsValue < 1) {
+      toast.error('Veuillez indiquer au moins 1 chambre')
+      return
+    }
+
+    if (Number.isNaN(bathroomsValue) || bathroomsValue < 1) {
+      toast.error('Veuillez indiquer au moins 1 salle de bain')
+      return
+    }
+
+    if (Number.isNaN(surfaceValue) || surfaceValue <= 0) {
+      toast.error('Veuillez renseigner une surface valide')
+      return
+    }
+
+    const payload = {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      type: formData.listing_type,
+      property_type: formData.property_type,
+      city: formData.city.trim(),
+      neighborhood: formData.neighborhood.trim() || formData.city.trim(),
+      address: formData.address.trim(),
+      price: priceValue,
+      rooms: Math.max(1, Math.round(roomsValue)),
+      bathrooms: Math.max(1, Math.round(bathroomsValue)),
+      surface_area: Math.max(1, Number(surfaceValue.toFixed(2))),
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+      amenities: formData.amenities,
+      images: formData.images,
+    } as const
+
+    await createListingMutation.mutateAsync(payload)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -217,15 +295,19 @@ export default function CreateListingPage() {
               name="property_type"
               required
               value={formData.property_type}
-              onChange={handleChange}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  property_type: event.target.value as CreateListingFormData['property_type'],
+                }))
+              }
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="apartment">Appartement</option>
-              <option value="house">Maison</option>
-              <option value="villa">Villa</option>
-              <option value="land">Terrain</option>
-              <option value="office">Bureau</option>
-              <option value="commercial">Commercial</option>
+              {PROPERTY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -238,11 +320,16 @@ export default function CreateListingPage() {
               name="listing_type"
               required
               value={formData.listing_type}
-              onChange={handleChange}
+              onChange={(event) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  listing_type: event.target.value as CreateListingFormData['listing_type'],
+                }))
+              }
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="rent">Location</option>
-              <option value="sale">Vente</option>
+              <option value="location">Location</option>
+              <option value="vente">Vente</option>
             </select>
           </div>
           </div>
@@ -306,6 +393,7 @@ export default function CreateListingPage() {
               required
               value={formData.price}
               onChange={handleChange}
+              min={0}
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               placeholder="50000"
             />
@@ -319,6 +407,7 @@ export default function CreateListingPage() {
               type="number"
               id="bedrooms"
               name="bedrooms"
+              min={1}
               value={formData.bedrooms}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -334,6 +423,7 @@ export default function CreateListingPage() {
               type="number"
               id="bathrooms"
               name="bathrooms"
+              min={1}
               value={formData.bathrooms}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -350,6 +440,7 @@ export default function CreateListingPage() {
             type="number"
             id="surface_area"
             name="surface_area"
+              min={1}
             value={formData.surface_area}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"

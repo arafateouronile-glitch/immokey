@@ -19,7 +19,7 @@ export default function MyListingsPage() {
   const { data: listings = [], isLoading, error } = useUserListings(user?.id)
   const deleteListingMutation = useDeleteListing()
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'archived'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   useEffect(() => {
@@ -48,16 +48,18 @@ export default function MyListingsPage() {
       listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       listing.address.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const matchesStatus = statusFilter === 'all' || listing.status === statusFilter
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && listing.available) ||
+      (statusFilter === 'archived' && !listing.available)
     
     return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: listings.length,
-    active: listings.filter(l => l.status === 'active').length,
-    pending: listings.filter(l => l.status === 'pending').length,
-    archived: listings.filter(l => l.status === 'archived').length,
+    active: listings.filter(l => l.available).length,
+    archived: listings.filter(l => !l.available).length,
     totalViews: listings.reduce((sum, l) => sum + ((l as any).views || 0), 0),
     totalFavorites: listings.reduce((sum, l) => sum + ((l as any).favorites || 0), 0),
   }

@@ -1,29 +1,25 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Search,
-  SlidersHorizontal,
-  Grid3x3,
-  List,
-  MapPin,
-  BedDouble,
-  Bath,
-  Ruler,
-  Heart,
-  Euro,
-  Home,
-  Building2,
-  X,
-} from 'lucide-react'
+import { Search, SlidersHorizontal, Grid3x3, List, Euro, Home, Building2, X } from 'lucide-react'
 import SEO from '@/components/seo/SEO'
+import { useListings } from '@/hooks/useListings'
+import ListingCard from '@/components/listings/ListingCard'
+import { ListingCardSkeleton } from '@/components/common/SkeletonLoader'
+import type { Listing } from '@/types'
 
 // Types
-type PropertyType = 'all' | 'apartment' | 'house' | 'land' | 'commercial'
+type PropertyTypeFilter =
+  | 'all'
+  | 'appartement'
+  | 'maison'
+  | 'terrain'
+  | 'bureau'
+  | 'commerce'
 type ViewMode = 'grid' | 'list'
 
 interface Filters {
   search: string
-  propertyType: PropertyType
+  propertyType: PropertyTypeFilter
   minPrice: string
   maxPrice: string
   location: string
@@ -33,82 +29,21 @@ interface Filters {
   maxArea: string
 }
 
-// Données de démonstration
-const mockListings = [
-  {
-    id: '1',
-    title: 'Appartement moderne à Lomé',
-    type: 'apartment',
-    price: 250000,
-    location: 'Lomé, Tokoin',
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 85,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-  },
-  {
-    id: '2',
-    title: 'Villa avec piscine',
-    type: 'house',
-    price: 450000,
-    location: 'Lomé, Bè',
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 200,
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
-  },
-  {
-    id: '3',
-    title: 'Terrain constructible',
-    type: 'land',
-    price: 80000,
-    location: 'Kara',
-    bedrooms: 0,
-    bathrooms: 0,
-    area: 500,
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
-  },
-  {
-    id: '4',
-    title: 'Bureau commercial centre-ville',
-    type: 'commercial',
-    price: 180000,
-    location: 'Lomé, Centre',
-    bedrooms: 0,
-    bathrooms: 1,
-    area: 120,
-    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-  },
-  {
-    id: '5',
-    title: 'Duplex lumineux',
-    type: 'apartment',
-    price: 320000,
-    location: 'Lomé, Hédzranawoé',
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 140,
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-  },
-  {
-    id: '6',
-    title: 'Maison familiale',
-    type: 'house',
-    price: 380000,
-    location: 'Sokodé',
-    bedrooms: 5,
-    bathrooms: 3,
-    area: 180,
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
-  },
-]
-
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -20 },
   transition: { duration: 0.3 },
 }
+
+const QUICK_PROPERTY_FILTERS: Array<{ value: PropertyTypeFilter; label: string }> = [
+  { value: 'all', label: 'Tous' },
+  { value: 'appartement', label: 'Appartements' },
+  { value: 'maison', label: 'Maisons' },
+  { value: 'terrain', label: 'Terrains' },
+  { value: 'bureau', label: 'Bureaux' },
+  { value: 'commerce', label: 'Commerces' },
+]
 
 export default function SearchPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -124,6 +59,81 @@ export default function SearchPage() {
     minArea: '',
     maxArea: '',
   })
+  const {
+    data: listings = [],
+    isLoading,
+    error,
+  } = useListings(
+    undefined,
+    {
+      sortBy: 'date',
+      sortOrder: 'desc',
+    }
+  )
+
+  const filteredListings: Listing[] = useMemo(() => {
+    const searchTerm = filters.search.trim().toLowerCase()
+    const locationTerm = filters.location.trim().toLowerCase()
+    const minPrice = Number(filters.minPrice)
+    const maxPrice = Number(filters.maxPrice)
+    const minBedrooms = Number(filters.bedrooms)
+    const minBathrooms = Number(filters.bathrooms)
+    const minArea = Number(filters.minArea)
+    const maxArea = Number(filters.maxArea)
+
+    return (listings as Listing[]).filter((listing) => {
+      const matchesSearch = searchTerm
+        ? listing.title.toLowerCase().includes(searchTerm) ||
+          listing.city.toLowerCase().includes(searchTerm) ||
+          listing.neighborhood.toLowerCase().includes(searchTerm)
+        : true
+
+      const matchesLocation = locationTerm
+        ? listing.city.toLowerCase().includes(locationTerm) ||
+          listing.neighborhood.toLowerCase().includes(locationTerm)
+        : true
+
+      const matchesProperty =
+        filters.propertyType === 'all' || listing.property_type === filters.propertyType
+
+      const matchesMinPrice =
+        filters.minPrice && !Number.isNaN(minPrice) ? listing.price >= minPrice : true
+      const matchesMaxPrice =
+        filters.maxPrice && !Number.isNaN(maxPrice) ? listing.price <= maxPrice : true
+
+      const matchesBedrooms =
+        filters.bedrooms && !Number.isNaN(minBedrooms)
+          ? listing.rooms >= minBedrooms
+          : true
+
+      const matchesBathrooms =
+        filters.bathrooms && !Number.isNaN(minBathrooms)
+          ? listing.bathrooms >= minBathrooms
+          : true
+
+      const matchesMinArea =
+        filters.minArea && !Number.isNaN(minArea)
+          ? listing.surface_area >= minArea
+          : true
+
+      const matchesMaxArea =
+        filters.maxArea && !Number.isNaN(maxArea)
+          ? listing.surface_area <= maxArea
+          : true
+
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesProperty &&
+        matchesMinPrice &&
+        matchesMaxPrice &&
+        matchesBedrooms &&
+        matchesBathrooms &&
+        matchesMinArea &&
+        matchesMaxArea
+      )
+    })
+  }, [filters, listings])
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -221,27 +231,21 @@ export default function SearchPage() {
 
               {/* Filtres rapides */}
               <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-                {['all', 'apartment', 'house', 'land', 'commercial'].map(
-                  (type) => (
-                    <button
-                      key={type}
-                      onClick={() =>
-                        handleFilterChange('propertyType', type as PropertyType)
-                      }
-                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                        filters.propertyType === type
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
-                      }`}
-                    >
-                      {type === 'all' && 'Tous'}
-                      {type === 'apartment' && 'Appartements'}
-                      {type === 'house' && 'Maisons'}
-                      {type === 'land' && 'Terrains'}
-                      {type === 'commercial' && 'Commerces'}
-                    </button>
-                  )
-                )}
+                {QUICK_PROPERTY_FILTERS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() =>
+                      handleFilterChange('propertyType', option.value)
+                    }
+                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+                      filters.propertyType === option.value
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </motion.div>
           </div>
@@ -351,11 +355,10 @@ export default function SearchPage() {
 
         {/* Résultats */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-          {/* Barre d'outils */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-neutral-600">
               <span className="font-semibold text-neutral-900">
-                {mockListings.length}
+                {isLoading ? 'Chargement...' : `${filteredListings.length}`}
               </span>{' '}
               biens trouvés
             </p>
@@ -383,86 +386,66 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Grille de résultats */}
-          <motion.div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'space-y-4'
-            }
-            layout
-          >
-            <AnimatePresence mode="popLayout">
-              {mockListings.map((listing, index) => (
-                <motion.div
-                  key={listing.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileHover={{ y: -8 }}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={listing.image}
-                      alt={listing.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                      <Heart className="h-5 w-5 text-neutral-600" />
-                    </button>
-                    <div className="absolute bottom-4 left-4">
-                      <span className="px-3 py-1 bg-primary-600 text-white text-sm font-semibold rounded-full">
-                        {listing.type === 'apartment' && 'Appartement'}
-                        {listing.type === 'house' && 'Maison'}
-                        {listing.type === 'land' && 'Terrain'}
-                        {listing.type === 'commercial' && 'Commerce'}
-                      </span>
-                    </div>
-                  </div>
+          {error && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              Impossible de charger les annonces :{' '}
+              {error instanceof Error ? error.message : 'erreur inconnue'}
+            </div>
+          )}
 
-                  {/* Contenu */}
-                  <div className="p-5">
-                    <h3 className="text-xl font-bold text-neutral-900 mb-2 group-hover:text-primary-600 transition-colors">
-                      {listing.title}
-                    </h3>
-                    <div className="flex items-center text-neutral-600 mb-4">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      <span className="text-sm">{listing.location}</span>
-                    </div>
-                    <div className="flex items-center justify-between mb-4 text-neutral-600 text-sm">
-                      {listing.bedrooms > 0 && (
-                        <div className="flex items-center">
-                          <BedDouble className="h-4 w-4 mr-1" />
-                          <span>{listing.bedrooms}</span>
-                        </div>
-                      )}
-                      {listing.bathrooms > 0 && (
-                        <div className="flex items-center">
-                          <Bath className="h-4 w-4 mr-1" />
-                          <span>{listing.bathrooms}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center">
-                        <Ruler className="h-4 w-4 mr-1" />
-                        <span>{listing.area} m²</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-neutral-200">
-                      <div className="flex items-center text-primary-600 font-bold text-2xl">
-                        {listing.price.toLocaleString()} FCFA
-                      </div>
-                      <button className="text-primary-600 hover:text-primary-700 font-semibold text-sm">
-                        Voir détails →
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
+          {isLoading ? (
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }
+            >
+              {Array.from({ length: viewMode === 'grid' ? 6 : 3 }).map((_, index) => (
+                <ListingCardSkeleton key={index} />
               ))}
-            </AnimatePresence>
-          </motion.div>
+            </div>
+          ) : filteredListings.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl border border-neutral-200 p-12 text-center">
+              <Home className="h-12 w-12 mx-auto text-neutral-300 mb-4" />
+              <h3 className="text-2xl font-semibold text-neutral-800 mb-2">
+                Aucun bien ne correspond à vos critères
+              </h3>
+              <p className="text-neutral-500 mb-6">
+                Ajustez vos filtres (prix, localisation, commodités) pour découvrir davantage
+                d’opportunités.
+              </p>
+              <button
+                onClick={resetFilters}
+                className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
+          ) : (
+            <motion.div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }
+              layout
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredListings.map((listing, index) => (
+                  <motion.div
+                    key={listing.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <ListingCard listing={listing} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
         </div>
       </div>
     </>
