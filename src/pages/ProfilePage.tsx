@@ -25,11 +25,6 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import {
-  getAllDocuments,
-  formatFileSize,
-  getDocumentTypeLabel,
-} from '@/services/rental/rentalDocumentService'
 import { getUserStats } from '@/services/profileService'
 
 interface UserProfile {
@@ -47,15 +42,6 @@ interface UserProfile {
   bio?: string | null
   created_at?: string | null
   updated_at?: string | null
-}
-
-interface ProfileDocument {
-  id: string
-  name: string
-  document_type: string
-  file_size?: number
-  created_at: string
-  file_url: string
 }
 
 interface ProfileStats {
@@ -77,9 +63,6 @@ export default function ProfilePage() {
     totalFavorites: 0,
   })
   const [statsLoading, setStatsLoading] = useState(false)
-  const [documents, setDocuments] = useState<ProfileDocument[]>([])
-  const [documentsLoading, setDocumentsLoading] = useState(false)
-  const [documentsError, setDocumentsError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -108,7 +91,7 @@ export default function ProfilePage() {
   const loadAllData = async () => {
     try {
       setLoading(true)
-      await Promise.all([loadProfile(), loadStats(), loadDocuments()])
+      await Promise.all([loadProfile(), loadStats()])
     } catch (error) {
       console.error('Profile init error:', error)
       toast.error('Impossible de charger votre espace personnel')
@@ -198,21 +181,6 @@ export default function ProfilePage() {
     }
   }
 
-  const loadDocuments = async () => {
-    if (!isSupabaseConfigured) return
-    try {
-      setDocumentsLoading(true)
-      setDocumentsError(null)
-      const docs = await getAllDocuments()
-      setDocuments((docs || []).slice(0, 6) as ProfileDocument[])
-    } catch (error) {
-      console.error('Profile documents error:', error)
-      setDocumentsError('Impossible de récupérer vos documents')
-    } finally {
-      setDocumentsLoading(false)
-    }
-  }
-
   const handleSave = async () => {
     try {
       setSaving(true)
@@ -258,6 +226,23 @@ export default function ProfilePage() {
     }
   }
 
+  const completion = useMemo(() => {
+    if (!profile) {
+      return 0
+    }
+    const fields = [
+      profile.full_name,
+      profile.phone,
+      profile.city,
+      profile.country,
+      profile.company_name,
+      profile.website,
+      profile.bio,
+    ]
+    const filled = fields.filter((value) => Boolean(value && String(value).trim())).length
+    return Math.max(20, Math.round((filled / fields.length) * 100))
+  }, [profile])
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-50">
@@ -273,20 +258,6 @@ export default function ProfilePage() {
       </div>
     )
   }
-
-  const completion = useMemo(() => {
-    const fields = [
-      profile.full_name,
-      profile.phone,
-      profile.city,
-      profile.country,
-      profile.company_name,
-      profile.website,
-      profile.bio,
-    ]
-    const filled = fields.filter((value) => Boolean(value && String(value).trim())).length
-    return Math.max(20, Math.round((filled / fields.length) * 100))
-  }, [profile])
 
   const userTypeLabel =
     profile.user_type === 'professionnel' ? 'Compte professionnel' : 'Compte particulier'
@@ -314,11 +285,11 @@ export default function ProfilePage() {
     },
     {
       icon: FileText,
-      title: 'Documents',
+      title: 'Annonces récentes',
       description:
-        documents.length > 0
-          ? `${documents.length} document(s) ajoutés`
-          : 'Aucun document importé',
+        stats.totalListings > 0
+          ? `${stats.totalListings} annonce(s) publiées`
+          : 'Pas encore d’annonce publiée',
     },
   ]
 
@@ -348,8 +319,6 @@ export default function ProfilePage() {
       gradient: 'from-amber-500/10 via-amber-500/5 to-transparent',
     },
   ]
-
-  const documentsSection = documents.slice(0, 4)
 
   return (
     <div className="relative min-h-screen bg-neutral-900/5 pt-16 pb-20">
@@ -783,81 +752,38 @@ export default function ProfilePage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-900">
-                    Documents et conformité
+                    Vos actions rapides
                   </h2>
                   <p className="text-sm text-neutral-500">
-                    Centralisez vos documents clés (KYC, contrats, attestations…) pour gagner du temps
-                    lors des transactions.
+                    Publiez une annonce, consultez vos messages et suivez vos favoris directement depuis votre espace.
                   </p>
                 </div>
-                <button
-                  onClick={() => navigate('/gestion-locative/documents')}
-                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50"
-                >
-                  Gérer
-                  <ArrowUpRight className="h-4 w-4" />
-                </button>
               </div>
-              <div className="mt-6">
-                {documentsLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <div
-                        key={`doc-skeleton-${index}`}
-                        className="h-16 animate-pulse rounded-2xl bg-neutral-100"
-                      />
-                    ))}
-                  </div>
-                ) : documentsError ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-                    {documentsError}
-                  </div>
-                ) : documentsSection.length > 0 ? (
-                  <ul className="space-y-4">
-                    {documentsSection.map((doc) => (
-                      <li
-                        key={doc.id}
-                        className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-primary-100 hover:bg-white"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-neutral-900">{doc.name}</p>
-                          <p className="text-xs text-neutral-500">
-                            {getDocumentTypeLabel(doc.document_type as any)} ·{' '}
-                            {doc.file_size ? formatFileSize(doc.file_size) : 'Taille inconnue'}
-                          </p>
-                          <p className="mt-1 text-xs text-neutral-400">
-                            Ajouté le {formatDate(doc.created_at)}
-                          </p>
-                        </div>
-                        <a
-                          href={doc.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center rounded-full border border-primary-100 bg-white px-4 py-2 text-xs font-semibold text-primary-600 transition hover:bg-primary-50"
-                        >
-                          Voir
-                          <ArrowUpRight className="ml-2 h-3.5 w-3.5" />
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-6 text-center">
-                    <p className="text-sm font-medium text-neutral-700">
-                      Aucun document importé pour le moment.
-                    </p>
-                    <p className="mt-2 text-xs text-neutral-500">
-                      Téléversez vos contrats, pièces d’identité, attestations, etc. pour les garder à
-                      portée de main.
-                    </p>
-                    <button
-                      onClick={() => navigate('/gestion-locative/documents')}
-                      className="mt-4 inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-                    >
-                      Importer un document
-                    </button>
-                  </div>
-                )}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <QuickActionCard
+                  title="Créer une annonce"
+                  description="Publiez un nouveau bien en quelques minutes pour toucher nos acheteurs."
+                  actionLabel="Nouvelle annonce"
+                  onClick={() => navigate('/annonces/creer')}
+                />
+                <QuickActionCard
+                  title="Mes annonces"
+                  description="Visualisez et gérez vos annonces en ligne (statut, disponibilité, statistiques)."
+                  actionLabel="Voir mes annonces"
+                  onClick={() => navigate('/mes-annonces')}
+                />
+                <QuickActionCard
+                  title="Messagerie"
+                  description="Échangez avec les acheteurs et propriétaires directement sur la plateforme."
+                  actionLabel="Accéder à la messagerie"
+                  onClick={() => navigate('/messages')}
+                />
+                <QuickActionCard
+                  title="Favoris"
+                  description="Retrouvez les biens que vous suivez pour rester informé des nouveautés."
+                  actionLabel="Voir mes favoris"
+                  onClick={() => navigate('/favoris')}
+                />
               </div>
             </div>
           </motion.section>
@@ -1043,6 +969,31 @@ function StatusRow({ icon: Icon, label, value, status = 'default' }: StatusRowPr
         <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{label}</p>
         <p className={`text-sm font-medium ${statusClasses}`}>{value}</p>
       </div>
+    </div>
+  )
+}
+
+interface QuickActionCardProps {
+  title: string
+  description: string
+  actionLabel: string
+  onClick: () => void
+}
+
+function QuickActionCard({ title, description, actionLabel, onClick }: QuickActionCardProps) {
+  return (
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-neutral-200 bg-neutral-50 p-4 shadow-sm transition hover:border-primary-100 hover:bg-white">
+      <div>
+        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+        <p className="mt-2 text-xs text-neutral-500">{description}</p>
+      </div>
+      <button
+        onClick={onClick}
+        className="mt-4 inline-flex items-center justify-between rounded-xl bg-primary-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary-700"
+      >
+        {actionLabel}
+        <ArrowUpRight className="ml-2 h-3.5 w-3.5" />
+      </button>
     </div>
   )
 }
