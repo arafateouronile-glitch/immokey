@@ -102,6 +102,22 @@ function App() {
               {/* Routes de gestion locative */}
               <Route path="gestion-locative" element={<Suspense fallback={<PageLoader />}><RentalAccessPage /></Suspense>} />
               <Route path="gestion-locative/dashboard" element={<Suspense fallback={<PageLoader />}><RentalDashboardPage /></Suspense>} />
+              
+              {/* Redirections pour anciens liens /gestion -> /gestion-locative */}
+              <Route path="gestion" element={<Navigate to="/gestion-locative" replace />} />
+              <Route path="gestion/dashboard" element={<Navigate to="/gestion-locative/dashboard" replace />} />
+              <Route path="gestion/biens" element={<Navigate to="/gestion-locative/biens" replace />} />
+              <Route path="gestion/biens/nouveau" element={<Navigate to="/gestion-locative/biens/nouveau" replace />} />
+              <Route path="gestion/biens/:id" element={<Navigate to="/gestion-locative/biens/:id" replace />} />
+              <Route path="gestion/locataires" element={<Navigate to="/gestion-locative/locataires" replace />} />
+              <Route path="gestion/locataires/nouveau" element={<Navigate to="/gestion-locative/locataires/nouveau" replace />} />
+              <Route path="gestion/locataires/:id" element={<Navigate to="/gestion-locative/locataires/:id" replace />} />
+              <Route path="gestion/paiements" element={<Navigate to="/gestion-locative/paiements" replace />} />
+              <Route path="gestion/paiements/nouveau" element={<Navigate to="/gestion-locative/paiements/nouveau" replace />} />
+              <Route path="gestion/documents" element={<Navigate to="/gestion-locative/documents" replace />} />
+              <Route path="gestion/documents/nouveau" element={<Navigate to="/gestion-locative/documents/nouveau" replace />} />
+              <Route path="gestion/messages" element={<Navigate to="/gestion-locative/messages" replace />} />
+              <Route path="gestion/messages/:id" element={<Navigate to="/gestion-locative/messages/:id" replace />} />
               <Route path="gestion-locative/biens" element={<Suspense fallback={<PageLoader />}><ManagedPropertiesPage /></Suspense>} />
               <Route path="gestion-locative/biens/nouveau" element={<Suspense fallback={<PageLoader />}><CreateManagedPropertyPage /></Suspense>} />
               <Route path="gestion-locative/biens/:id" element={<Suspense fallback={<PageLoader />}><ManagedPropertyDetailPage /></Suspense>} />
