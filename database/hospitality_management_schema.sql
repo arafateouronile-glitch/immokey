@@ -448,3 +448,4 @@ CREATE POLICY "Owners can manage pricing rules of their establishments" ON hospi
 
 
 
+
