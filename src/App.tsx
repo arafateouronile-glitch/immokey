@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { HelmetProvider } from 'react-helmet-async'
@@ -73,6 +73,16 @@ const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage'))
 const CookiesPolicyPage = lazy(() => import('./pages/legal/CookiesPolicyPage'))
 const LegalNoticePage = lazy(() => import('./pages/legal/LegalNoticePage'))
 
+// Composant de redirection pour les routes avec paramètres
+const RedirectWithParams = ({ from, to }: { from: string; to: string }) => {
+  const params = useParams()
+  const newPath = Object.keys(params).reduce(
+    (path, key) => path.replace(`:${key}`, params[key] || ''),
+    to
+  )
+  return <Navigate to={newPath} replace />
+}
+
 function App() {
   return (
     <HelmetProvider>
@@ -108,16 +118,16 @@ function App() {
               <Route path="gestion/dashboard" element={<Navigate to="/gestion-locative/dashboard" replace />} />
               <Route path="gestion/biens" element={<Navigate to="/gestion-locative/biens" replace />} />
               <Route path="gestion/biens/nouveau" element={<Navigate to="/gestion-locative/biens/nouveau" replace />} />
-              <Route path="gestion/biens/:id" element={<Navigate to="/gestion-locative/biens/:id" replace />} />
+              <Route path="gestion/biens/:id" element={<RedirectWithParams from="/gestion/biens/:id" to="/gestion-locative/biens/:id" />} />
               <Route path="gestion/locataires" element={<Navigate to="/gestion-locative/locataires" replace />} />
               <Route path="gestion/locataires/nouveau" element={<Navigate to="/gestion-locative/locataires/nouveau" replace />} />
-              <Route path="gestion/locataires/:id" element={<Navigate to="/gestion-locative/locataires/:id" replace />} />
+              <Route path="gestion/locataires/:id" element={<RedirectWithParams from="/gestion/locataires/:id" to="/gestion-locative/locataires/:id" />} />
               <Route path="gestion/paiements" element={<Navigate to="/gestion-locative/paiements" replace />} />
               <Route path="gestion/paiements/nouveau" element={<Navigate to="/gestion-locative/paiements/nouveau" replace />} />
               <Route path="gestion/documents" element={<Navigate to="/gestion-locative/documents" replace />} />
               <Route path="gestion/documents/nouveau" element={<Navigate to="/gestion-locative/documents/nouveau" replace />} />
               <Route path="gestion/messages" element={<Navigate to="/gestion-locative/messages" replace />} />
-              <Route path="gestion/messages/:id" element={<Navigate to="/gestion-locative/messages/:id" replace />} />
+              <Route path="gestion/messages/:id" element={<RedirectWithParams from="/gestion/messages/:id" to="/gestion-locative/messages/:id" />} />
               <Route path="gestion-locative/biens" element={<Suspense fallback={<PageLoader />}><ManagedPropertiesPage /></Suspense>} />
               <Route path="gestion-locative/biens/nouveau" element={<Suspense fallback={<PageLoader />}><CreateManagedPropertyPage /></Suspense>} />
               <Route path="gestion-locative/biens/:id" element={<Suspense fallback={<PageLoader />}><ManagedPropertyDetailPage /></Suspense>} />
