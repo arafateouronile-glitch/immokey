@@ -1,5 +1,14 @@
 import { Link } from 'react-router-dom'
-import { Home, Menu, X, Search, Hotel, LogIn, UserPlus } from 'lucide-react'
+import {
+  Home,
+  Menu,
+  X,
+  Search,
+  Hotel,
+  Building2,
+  LogIn,
+  UserPlus,
+} from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -55,6 +64,14 @@ export default function Header() {
             >
               <Hotel className="h-4 w-4" />
               <span>Hôtellerie</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link
+              to="/gestion-locative"
+              className="group flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors relative py-2"
+            >
+              <Building2 className="h-4 w-4" />
+              <span>Gestion locative</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link
@@ -150,6 +167,20 @@ export default function Header() {
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
+                >
+                  <Link
+                    to="/gestion-locative"
+                    className="flex items-center space-x-3 text-neutral-700 hover:text-primary-600 font-medium py-2 px-4 rounded-lg hover:bg-primary-50 transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Building2 className="h-5 w-5" />
+                    <span>Gestion locative</span>
+                  </Link>
+                </motion.div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
                 >
                   <Link
                     to="/connexion"

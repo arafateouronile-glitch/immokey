@@ -144,6 +144,7 @@ export default function HomePage() {
                   'Contact direct',
                 ],
                 color: 'from-blue-500 to-blue-600',
+                link: '/recherche',
               },
               {
                 icon: Hotel,
@@ -156,6 +157,7 @@ export default function HomePage() {
                   'Statistiques',
                 ],
                 color: 'from-primary-500 to-primary-600',
+                link: '/hotellerie',
               },
               {
                 icon: FileText,
@@ -164,40 +166,51 @@ export default function HomePage() {
                   'Gérez vos biens, locataires et paiements en toute simplicité',
                 features: ['Suivi des paiements', 'Documents', 'Rappels auto'],
                 color: 'from-green-500 to-green-600',
+                link: '/gestion-locative',
               },
             ].map((service, index) => (
-              <motion.div
+              <Link
                 key={service.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                className="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-neutral-100"
+                to={service.link}
+                className="group"
+                aria-label={`Découvrir ${service.title}`}
               >
-                <div
-                  className={`w-16 h-16 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                  className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-neutral-100"
                 >
-                  <service.icon className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors">
-                  {service.title}
-                </h3>
-                <p className="text-neutral-600 mb-6 leading-relaxed">
-                  {service.description}
-                </p>
-                <ul className="space-y-2">
-                  {service.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-center text-sm text-neutral-700"
-                    >
-                      <CheckCircle className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
+                  <div
+                    className={`w-16 h-16 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <service.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors">
+                    {service.title}
+                  </h3>
+                  <p className="text-neutral-600 mb-6 leading-relaxed">
+                    {service.description}
+                  </p>
+                  <ul className="space-y-2">
+                    {service.features.map((feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-center text-sm text-neutral-700"
+                      >
+                        <CheckCircle className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <span className="mt-6 inline-flex items-center text-sm font-semibold text-primary-600 group-hover:text-primary-700 transition-colors">
+                    Découvrir
+                    <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>

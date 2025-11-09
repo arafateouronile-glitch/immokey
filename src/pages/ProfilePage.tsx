@@ -16,7 +16,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editing, setEditing] = useState(false)
@@ -33,13 +33,15 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
+    if (authLoading) return
+
     if (!user) {
       navigate('/connexion')
       return
     }
 
     loadProfile()
-  }, [user, navigate])
+  }, [authLoading, user, navigate])
 
   const loadProfile = async () => {
     try {
@@ -121,7 +123,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
