@@ -12,7 +12,7 @@ import {
   Bath,
   Maximize,
   FileText,
-  Images,
+  ImagePlus,
   Navigation,
 } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
@@ -373,7 +373,7 @@ export default function CreateListingPage() {
         {/* Section Photos */}
         <div className="border-t pt-8">
           <h2 className="text-xl font-bold text-neutral-900 mb-4 flex items-center gap-2">
-            <Images size={24} className="text-primary-600" />
+            <ImagePlus size={24} className="text-primary-600" />
             Photos du bien
           </h2>
           <p className="text-sm text-neutral-500 mb-4">
