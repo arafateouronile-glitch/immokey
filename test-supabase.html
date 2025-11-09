@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion Supabase - ImmoKey</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #374151;
+        }
+        pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Test Connexion Supabase</h1>
+        <p>Testez votre connexion à Supabase pour ImmoKey</p>
+
+        <div id="status" class="status info">
+            ⏳ En attente du test...
+        </div>
+
+        <div id="details"></div>
+
+        <button onclick="testConnection()">🧪 Tester la Connexion</button>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h2>📝 Test d'Inscription</h2>
+        <div class="form-group">
+            <label>Email de test :</label>
+            <input type="email" id="testEmail" value="test@immokey.io" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+            <label>Mot de passe :</label>
+            <input type="password" id="testPassword" value="Test123456!" placeholder="Minimum 8 caractères">
+        </div>
+        <button onclick="testSignUp()">📧 Créer un compte test</button>
+        <button onclick="testSignIn()">🔓 Se connecter</button>
+
+        <div id="authResult"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+        const SUPABASE_URL = 'https://rchnsvcxgzjtiqsmxidt.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjaG5zdmN4Z3pqdGlxc214aWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2MDE3ODcsImV4cCI6MjA3ODE3Nzc4N30.VUKCfQu5JFFI-Ii8pBG8yeyRYP4NcE6N4Zu0Bhd-Jy0'
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        window.testConnection = async function() {
+            const statusDiv = document.getElementById('status')
+            const detailsDiv = document.getElementById('details')
+            
+            statusDiv.className = 'status info'
+            statusDiv.innerHTML = '⏳ Test en cours...'
+            detailsDiv.innerHTML = ''
+
+            try {
+                // Test 1: Connexion à Supabase
+                const { data, error } = await supabase.auth.getSession()
+                
+                if (error) throw error
+
+                // Test 2: Vérifier l'accès à la base de données
+                const { data: testData, error: dbError } = await supabase
+                    .from('user_profiles')
+                    .select('count')
+                    .limit(1)
+
+                let dbStatus = '✅ Base de données accessible'
+                if (dbError) {
+                    // C'est normal si la table n'existe pas encore
+                    dbStatus = `⚠️ Table user_profiles : ${dbError.message}`
+                }
+
+                statusDiv.className = 'status success'
+                statusDiv.innerHTML = '✅ Connexion à Supabase réussie !'
+                
+                detailsDiv.innerHTML = `
+                    <pre>${JSON.stringify({
+                        url: SUPABASE_URL,
+                        session: data.session ? '✅ Session active' : '❌ Pas de session',
+                        user: data.session?.user?.email || 'Non connecté',
+                        database: dbStatus
+                    }, null, 2)}</pre>
+                `
+            } catch (error) {
+                statusDiv.className = 'status error'
+                statusDiv.innerHTML = '❌ Erreur de connexion à Supabase'
+                detailsDiv.innerHTML = `<pre>${JSON.stringify(error, null, 2)}</pre>`
+            }
+        }
+
+        window.testSignUp = async function() {
+            const email = document.getElementById('testEmail').value
+            const password = document.getElementById('testPassword').value
+            const resultDiv = document.getElementById('authResult')
+
+            if (!email || !password) {
+                resultDiv.innerHTML = '<div class="status error">⚠️ Veuillez remplir l\'email et le mot de passe</div>'
+                return
+            }
+
+            resultDiv.innerHTML = '<div class="status info">⏳ Création du compte en cours...</div>'
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: 'Test',
+                            last_name: 'User'
+                        }
+                    }
+                })
+
+                if (error) throw error
+
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Compte créé avec succès !<br>
+                        📧 Vérifiez votre email : <strong>${email}</strong><br>
+                        ${data.user?.email_confirmed_at ? '✅ Email confirmé' : '⚠️ Confirmation email requise'}
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur lors de la création du compte<br>
+                        ${error.message}
+                    </div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `
+            }
+        }
+
+        window.testSignIn = async function() {
+            const email = document.getElementById('testEmail').value
+            const password = document.getElementById('testPassword').value
+            const resultDiv = document.getElementById('authResult')
+
+            if (!email || !password) {
+                resultDiv.innerHTML = '<div class="status error">⚠️ Veuillez remplir l\'email et le mot de passe</div>'
+                return
+            }
+
+            resultDiv.innerHTML = '<div class="status info">⏳ Connexion en cours...</div>'
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                })
+
+                if (error) throw error
+
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        ✅ Connexion réussie !<br>
+                        👤 Connecté en tant que : <strong>${data.user.email}</strong><br>
+                        🔑 Session ID : ${data.session.access_token.substring(0, 20)}...
+                    </div>
+                    <pre>${JSON.stringify({
+                        user: data.user.email,
+                        created_at: data.user.created_at,
+                        last_sign_in: data.user.last_sign_in_at
+                    }, null, 2)}</pre>
+                `
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        ❌ Erreur de connexion<br>
+                        ${error.message}
+                    </div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `
+            }
+        }
+
+        // Test automatique au chargement
+        window.addEventListener('load', () => {
+            testConnection()
+        })
+    </script>
+</body>
+</html>
+
