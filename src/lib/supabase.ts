@@ -26,7 +26,24 @@ if (isPlaceholder) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: {
+      getItem: (key) => {
+        return window.localStorage.getItem(key)
+      },
+      setItem: (key, value) => {
+        window.localStorage.setItem(key, value)
+      },
+      removeItem: (key) => {
+        window.localStorage.removeItem(key)
+      },
+    },
+  },
+})
 
 // Helper pour vérifier si Supabase est configuré
 export const isSupabaseConfigured = !isPlaceholder

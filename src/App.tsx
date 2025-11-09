@@ -32,6 +32,7 @@ const FAQPage = lazy(() => import('./pages/FAQPage'))
 const SuperAdminDashboardPage = lazy(() => import('./pages/admin/SuperAdminDashboardPage'))
 
 // Pages Immobilier (Rental Management)
+const RentalAccessPage = lazy(() => import('./pages/rental/RentalAccessPage'))
 const RentalDashboardPage = lazy(() => import('./pages/rental/RentalDashboardPage'))
 const ManagedPropertiesPage = lazy(() => import('./pages/rental/ManagedPropertiesPage'))
 const CreateManagedPropertyPage = lazy(() => import('./pages/rental/CreateManagedPropertyPage'))
@@ -99,7 +100,8 @@ function App() {
               <Route path="faq" element={<Suspense fallback={<PageLoader />}><FAQPage /></Suspense>} />
 
               {/* Routes de gestion locative */}
-              <Route path="gestion-locative" element={<Suspense fallback={<PageLoader />}><RentalDashboardPage /></Suspense>} />
+              <Route path="gestion-locative" element={<Suspense fallback={<PageLoader />}><RentalAccessPage /></Suspense>} />
+              <Route path="gestion-locative/dashboard" element={<Suspense fallback={<PageLoader />}><RentalDashboardPage /></Suspense>} />
               <Route path="gestion-locative/biens" element={<Suspense fallback={<PageLoader />}><ManagedPropertiesPage /></Suspense>} />
               <Route path="gestion-locative/biens/nouveau" element={<Suspense fallback={<PageLoader />}><CreateManagedPropertyPage /></Suspense>} />
               <Route path="gestion-locative/biens/:id" element={<Suspense fallback={<PageLoader />}><ManagedPropertyDetailPage /></Suspense>} />

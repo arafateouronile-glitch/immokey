@@ -438,6 +438,13 @@ export default function ProfilePage() {
                   Fermer l’édition
                 </button>
               )}
+              <Link
+                to="/gestion-locative"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-green-900/10 transition hover:-translate-y-0.5 hover:bg-green-700 hover:shadow-xl"
+              >
+                <Building2 className="h-4 w-4" />
+                Gestion Locative
+              </Link>
               <button
                 onClick={handleLogout}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-xs font-medium text-white/80 transition hover:bg-white/10"

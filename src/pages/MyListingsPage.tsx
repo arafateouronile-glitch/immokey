@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, Search, Filter, Eye, Edit, Trash2, Home, Building2,
   TrendingUp, DollarSign, MapPin, Heart, MessageSquare, AlertCircle,
-  CheckCircle, Clock, Grid3x3, List, BarChart3, Calendar
+  CheckCircle, Clock, Grid3x3, List, BarChart3, Calendar, ArrowLeft, User
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
@@ -116,6 +116,21 @@ export default function MyListingsPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8 relative z-10">
+          {/* Bouton retour profil */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-6"
+          >
+            <Link
+              to="/profil"
+              className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              Retour au profil
+            </Link>
+          </motion.div>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
