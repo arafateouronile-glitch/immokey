@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { HelmetProvider } from 'react-helmet-async'
@@ -89,6 +89,7 @@ function App() {
               <Route path="recherche" element={<Suspense fallback={<PageLoader />}><SearchPage /></Suspense>} />
               <Route path="annonces/:id" element={<Suspense fallback={<PageLoader />}><ListingDetailPage /></Suspense>} />
               <Route path="annonces/creer" element={<Suspense fallback={<PageLoader />}><CreateListingPage /></Suspense>} />
+              <Route path="publier" element={<Navigate to="/annonces/creer" replace />} />
               <Route path="annonces/modifier/:id" element={<Suspense fallback={<PageLoader />}><EditListingPage /></Suspense>} />
               <Route path="mes-annonces" element={<Suspense fallback={<PageLoader />}><MyListingsPage /></Suspense>} />
               <Route path="favoris" element={<Suspense fallback={<PageLoader />}><FavoritesPage /></Suspense>} />
