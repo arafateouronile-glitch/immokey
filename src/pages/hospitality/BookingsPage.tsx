@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Plus, Search, Filter, Calendar, Edit, Eye, Building2, User, DollarSign,
+  Plus, Search, Filter, Calendar, Edit, Eye, Building2, User, Users, DollarSign,
   Clock, CheckCircle, XCircle, AlertCircle, MapPin, Phone, Mail,
   CreditCard, ArrowUpRight, Download, TrendingUp, Bed, Home
 } from 'lucide-react'
