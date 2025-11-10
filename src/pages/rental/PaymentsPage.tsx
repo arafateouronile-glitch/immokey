@@ -145,14 +145,110 @@ export default function PaymentsPage() {
     return months[month - 1]
   }
 
-  const getStatusConfig = (status: string) => {
-    const configs = {
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: Clock, label: 'En attente' },
-      paid: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle, label: 'Payé' },
-      overdue: { bg: 'bg-red-100', text: 'text-red-800', icon: AlertCircle, label: 'En retard' },
-      cancelled: { bg: 'bg-gray-100', text: 'text-gray-800', icon: XCircle, label: 'Annulé' },
+  const formatPaymentMethod = (method: Payment['payment_method']) => {
+    const labels: Record<Payment['payment_method'], string> = {
+      cash: 'Espèces',
+      bank_transfer: 'Virement bancaire',
+      mobile_money: 'Mobile Money',
+      check: 'Chèque',
+      other: 'Autre',
     }
-    return configs[status as keyof typeof configs] || configs.pending
+    return labels[method] || method
+  }
+
+  const sanitizeCSVValue = (value: string) => {
+    const safeValue = value.replace(/"/g, '')
+    return `"${safeValue}"`
+  }
+
+  const exportToCSV = (rows: string[][], filename: string) => {
+    const csvContent = rows
+      .map((row) => row.map((cell) => sanitizeCSVValue(cell)).join(';'))
+      .join('\n')
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExport = () => {
+    if (activeTab === 'due_dates') {
+      if (filteredDueDates.length === 0) {
+        toast.error('Aucune échéance à exporter')
+        return
+      }
+
+      const header = [
+        'Locataire',
+        'Email',
+        'ID Bien',
+        'Période',
+        'Montant total',
+        'Statut',
+        'Date limite',
+      ]
+
+      const rows = filteredDueDates.map((dd) => {
+        const tenant = tenants.find((t) => t.id === dd.tenant_id)
+        const period = `${getMonthName(dd.period_month)} ${dd.period_year}`
+        const statusConfig = getStatusConfig(dd.status)
+        const dueDateFormatted = dd.due_date ? formatDate(dd.due_date) : ''
+        const propertyId = dd.managed_property_id || tenant?.managed_property_id || '-'
+        return [
+          tenant?.full_name || 'Locataire inconnu',
+          tenant?.email || '',
+          propertyId,
+          period,
+          `${formatPrice(dd.total_amount)} FCFA`,
+          statusConfig.label,
+          dueDateFormatted,
+        ]
+      })
+
+      const filename = `echeances-${new Date().toISOString().split('T')[0]}.csv`
+      exportToCSV([header, ...rows], filename)
+      toast.success('Export des échéances prêt')
+      return
+    }
+
+    if (filteredPayments.length === 0) {
+      toast.error('Aucun paiement à exporter')
+      return
+    }
+
+    const header = [
+      'Locataire',
+      'Email',
+      'ID Bien',
+      'Date de paiement',
+      'Montant',
+      'Méthode',
+      'Référence',
+      'Notes',
+    ]
+
+    const rows = filteredPayments.map((payment) => {
+      const tenant = tenants.find((t) => t.id === payment.tenant_id)
+      return [
+        tenant?.full_name || 'Locataire inconnu',
+        tenant?.email || '',
+        payment.managed_property_id || tenant?.managed_property_id || '-',
+        formatDate(payment.payment_date),
+        `${formatPrice(payment.amount)} FCFA`,
+        formatPaymentMethod(payment.payment_method),
+        payment.transaction_reference || '',
+        payment.notes || '',
+      ]
+    })
+
+    const filename = `paiements-${new Date().toISOString().split('T')[0]}.csv`
+    exportToCSV([header, ...rows], filename)
+    toast.success('Export des paiements prêt')
   }
 
   const collectionRate = stats.total_due > 0 ? ((stats.total_paid / (stats.total_paid + stats.total_due)) * 100) : 0
@@ -230,7 +326,7 @@ export default function PaymentsPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => toast.success('Export en cours...')}
+                onClick={handleExport}
                 className="btn-secondary flex items-center gap-2 px-5 py-3"
               >
                 <Download size={20} />
