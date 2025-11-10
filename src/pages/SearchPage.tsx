@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, SlidersHorizontal, Grid3x3, List, Euro, Home, Building2, X } from 'lucide-react'
+import { Search, SlidersHorizontal, Grid3x3, List, Euro, Home, Building2, X, Check, Filter } from 'lucide-react'
 import SEO from '@/components/seo/SEO'
 import { useListings } from '@/hooks/useListings'
 import ListingCard from '@/components/listings/ListingCard'
@@ -20,6 +20,7 @@ type ViewMode = 'grid' | 'list'
 interface Filters {
   search: string
   propertyType: PropertyTypeFilter
+  listingType: 'all' | 'location' | 'vente'
   minPrice: string
   maxPrice: string
   location: string
@@ -27,6 +28,8 @@ interface Filters {
   bathrooms: string
   minArea: string
   maxArea: string
+  amenities: string[]
+  availability: 'all' | 'available' | 'unavailable'
 }
 
 const fadeInUp = {
@@ -45,12 +48,24 @@ const QUICK_PROPERTY_FILTERS: Array<{ value: PropertyTypeFilter; label: string }
   { value: 'commerce', label: 'Commerces' },
 ]
 
+const AMENITIES = [
+  'Climatisation',
+  'Balcon',
+  'Parking',
+  'Jardin',
+  'Piscine',
+  'Sécurité 24/7',
+  'Meublé',
+  'Internet haut débit',
+]
+
 export default function SearchPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<Filters>({
     search: '',
     propertyType: 'all',
+    listingType: 'all',
     minPrice: '',
     maxPrice: '',
     location: '',
@@ -58,6 +73,8 @@ export default function SearchPage() {
     bathrooms: '',
     minArea: '',
     maxArea: '',
+    amenities: [],
+    availability: 'all',
   })
   const {
     data: listings = [],
@@ -96,6 +113,9 @@ export default function SearchPage() {
       const matchesProperty =
         filters.propertyType === 'all' || listing.property_type === filters.propertyType
 
+      const matchesListingType =
+        filters.listingType === 'all' || listing.type === filters.listingType
+
       const matchesMinPrice =
         filters.minPrice && !Number.isNaN(minPrice) ? listing.price >= minPrice : true
       const matchesMaxPrice =
@@ -121,28 +141,60 @@ export default function SearchPage() {
           ? listing.surface_area <= maxArea
           : true
 
+      const listingAmenities = listing.amenities?.map((a) => a.toLowerCase()) ?? []
+
+      const matchesAmenities =
+        filters.amenities.length > 0
+          ? filters.amenities.every((amenity) =>
+              listingAmenities.includes(amenity.toLowerCase())
+            )
+          : true
+
+      const matchesAvailability =
+        filters.availability === 'all'
+          ? true
+          : filters.availability === 'available'
+          ? listing.available
+          : !listing.available
+
       return (
         matchesSearch &&
         matchesLocation &&
         matchesProperty &&
+        matchesListingType &&
         matchesMinPrice &&
         matchesMaxPrice &&
         matchesBedrooms &&
         matchesBathrooms &&
         matchesMinArea &&
-        matchesMaxArea
+        matchesMaxArea &&
+        matchesAmenities &&
+        matchesAvailability
       )
     })
   }, [filters, listings])
 
-  const handleFilterChange = (key: keyof Filters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
+  const handleFilterChange = (
+    key: keyof Filters,
+    value: string | Filters['listingType'] | Filters['availability']
+  ) => {
+    setFilters((prev) => ({ ...prev, [key]: value as any }))
+  }
+
+  const handleAmenityToggle = (amenity: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((item) => item !== amenity)
+        : [...prev.amenities, amenity],
+    }))
   }
 
   const resetFilters = () => {
     setFilters({
       search: '',
       propertyType: 'all',
+      listingType: 'all',
       minPrice: '',
       maxPrice: '',
       location: '',
@@ -150,6 +202,8 @@ export default function SearchPage() {
       bathrooms: '',
       minArea: '',
       maxArea: '',
+      amenities: [],
+      availability: 'all',
     })
   }
 
@@ -230,22 +284,41 @@ export default function SearchPage() {
               </div>
 
               {/* Filtres rapides */}
-              <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-                {QUICK_PROPERTY_FILTERS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() =>
-                      handleFilterChange('propertyType', option.value)
-                    }
-                    className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                      filters.propertyType === option.value
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-2">
+                <div className="flex items-center gap-2">
+                  {QUICK_PROPERTY_FILTERS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleFilterChange('propertyType', option.value)}
+                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+                        filters.propertyType === option.value
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 pl-4 border-l border-neutral-200">
+                  <Filter className="h-4 w-4 text-neutral-400" />
+                  <span className="text-sm font-semibold text-neutral-600">Transaction :</span>
+                  {['all', 'location', 'vente'].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() =>
+                        handleFilterChange('listingType', type as Filters['listingType'])
+                      }
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        filters.listingType === type
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-white border border-neutral-300 text-neutral-700 hover:border-emerald-500'
+                      }`}
+                    >
+                      {type === 'all' ? 'Tout' : type === 'location' ? 'Location' : 'Vente'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -329,6 +402,59 @@ export default function SearchPage() {
                       <option value="2">2+</option>
                       <option value="3">3+</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Disponibilité
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {(['all', 'available', 'unavailable'] as Filters['availability'][]).map(
+                        (value) => (
+                          <button
+                            key={value}
+                            onClick={() => handleFilterChange('availability', value)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              filters.availability === value
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
+                            }`}
+                          >
+                            {value === 'all'
+                              ? 'Tous'
+                              : value === 'available'
+                              ? 'Disponibles'
+                              : 'Loués'}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Commodités
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {AMENITIES.map((amenity) => {
+                        const selected = filters.amenities.includes(amenity)
+                        return (
+                          <button
+                            key={amenity}
+                            onClick={() => handleAmenityToggle(amenity)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all text-sm ${
+                              selected
+                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg'
+                                : 'bg-white border-neutral-300 text-neutral-600 hover:border-emerald-400'
+                            }`}
+                          >
+                            <Check className={selected ? 'h-4 w-4' : 'hidden'} />
+                            <span>{amenity}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 
