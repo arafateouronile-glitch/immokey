@@ -44,20 +44,12 @@ export default function HospitalityDashboardPage() {
         getEstablishmentsStats(),
       ])
 
-      const safeEstablishments = Array.isArray(establishmentsData)
-        ? establishmentsData
-        : establishmentsData
-        ? [establishmentsData].flat().filter(Boolean)
-        : []
-
-      const safeStats = {
+      setEstablishments(Array.isArray(establishmentsData) ? establishmentsData : [])
+      setStats({
         total: Number(statsData?.total) || 0,
         active: Number(statsData?.active) || 0,
         inactive: Number(statsData?.inactive) || 0,
-      }
-
-      setEstablishments(safeEstablishments)
-      setStats(safeStats)
+      })
     } catch (err: any) {
       console.error('Error fetching hospitality data:', err)
       const errorMessage = err?.message || 'Erreur lors du chargement des données'
@@ -80,14 +72,13 @@ export default function HospitalityDashboardPage() {
     setRevenueLoading(true)
     try {
       const data = await getRevenueData(revenuePeriod)
-      const safeRevenue = {
+      setRevenueData({
         total: Number(data?.total) || 0,
         average: Number(data?.average) || 0,
         growth: Number(data?.growth) || 0,
         period: data?.period || revenuePeriod,
         data: Array.isArray(data?.data) ? data.data : [],
-      }
-      setRevenueData(safeRevenue)
+      })
     } catch (err: any) {
       console.error('Error fetching revenue data:', err)
     } finally {
