@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   DollarSign, Plus, Calendar, CheckCircle, AlertCircle, Clock,
@@ -24,6 +24,7 @@ export default function PaymentsPage() {
   const tenantFilter = searchParams.get('tenant')
 
   const { user, loading: authLoading } = useAuth()
+  const location = useLocation()
   const [dueDates, setDueDates] = useState<PaymentDueDate[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [tenants, setTenants] = useState<Tenant[]>([])
@@ -49,7 +50,7 @@ export default function PaymentsPage() {
     if (user) {
       fetchData()
     }
-  }, [user, authLoading, navigate])
+  }, [user, authLoading, navigate, location.key])
 
   const fetchData = async () => {
     if (!user) return
@@ -83,6 +84,21 @@ export default function PaymentsPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const state = location.state as { refresh?: number; tab?: 'due_dates' | 'payments' } | null
+
+    if (state?.tab) {
+      setActiveTab(state.tab)
+    }
+
+    if (state?.refresh) {
+      fetchData().finally(() => {
+        navigate(location.pathname, { replace: true, state: null })
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state])
 
   const filteredDueDates = dueDates.filter((dd) => {
     if (statusFilter !== 'all' && dd.status !== statusFilter) return false

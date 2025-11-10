@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, DollarSign, Calendar } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { createPayment, getDueDate, getDueDatesByTenant } from '@/services/rental/paymentService'
 import { getTenants, getTenant } from '@/services/rental/tenantService'
@@ -175,7 +176,8 @@ export default function CreatePaymentPage() {
         notes: formData.notes || undefined,
       })
 
-      navigate('/gestion-locative/paiements')
+      toast.success('Paiement enregistré avec succès')
+      navigate('/gestion-locative/paiements', { state: { refresh: Date.now(), tab: 'payments' } })
     } catch (err: any) {
       console.error('Error creating payment:', err)
       setError(err.message || 'Erreur lors de l\'enregistrement du paiement')
