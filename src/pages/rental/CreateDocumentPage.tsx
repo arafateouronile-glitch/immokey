@@ -62,7 +62,7 @@ export default function CreateDocumentPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/documents/nouveau' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/documents/nouveau' } })
       return
     }
 
@@ -170,11 +170,11 @@ export default function CreateDocumentPage() {
 
       // Rediriger vers la liste des documents ou le bien/locataire
       if (data.managed_property_id) {
-        navigate(`/gestion/biens/${data.managed_property_id}`)
+        navigate(`/gestion-locative/biens/${data.managed_property_id}`)
       } else if (data.tenant_id) {
-        navigate(`/gestion/locataires/${data.tenant_id}`)
+        navigate(`/gestion-locative/locataires/${data.tenant_id}`)
       } else {
-        navigate('/gestion/documents')
+        navigate('/gestion-locative/documents')
       }
     } catch (err: any) {
       console.error('Error uploading document:', err)
@@ -204,7 +204,7 @@ export default function CreateDocumentPage() {
       {/* En-tête */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/gestion/documents')}
+          onClick={() => navigate('/gestion-locative/documents')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -370,7 +370,7 @@ export default function CreateDocumentPage() {
         <div className="flex justify-end space-x-4">
           <button
             type="button"
-            onClick={() => navigate('/gestion/documents')}
+            onClick={() => navigate('/gestion-locative/documents')}
             className="btn-secondary"
           >
             Annuler

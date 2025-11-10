@@ -20,7 +20,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/messages' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/messages' } })
       return
     }
 
@@ -29,7 +29,7 @@ export default function MessagesPage() {
       
       // Si des paramètres sont passés, ouvrir directement la conversation
       if (propertyParam && tenantParam) {
-        navigate(`/gestion/messages/${propertyParam}/${tenantParam}`)
+        navigate(`/gestion-locative/messages/${propertyParam}/${tenantParam}`)
       }
     }
   }, [user, authLoading, navigate])
@@ -197,7 +197,7 @@ export default function MessagesPage() {
                     key={`${conversation.managed_property_id}-${conversation.tenant_id}`}
                     onClick={() =>
                       navigate(
-                        `/gestion/messages/${conversation.managed_property_id}/${conversation.tenant_id}`
+                        `/gestion-locative/messages/${conversation.managed_property_id}/${conversation.tenant_id}`
                       )
                     }
                     className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200"

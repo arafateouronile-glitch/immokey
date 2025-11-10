@@ -76,11 +76,16 @@ const LegalNoticePage = lazy(() => import('./pages/legal/LegalNoticePage'))
 // Composant de redirection pour les routes avec paramètres
 const RedirectWithParams = ({ from, to }: { from: string; to: string }) => {
   const params = useParams()
-  const newPath = Object.keys(params).reduce(
-    (path, key) => path.replace(`:${key}`, params[key] || ''),
-    to
-  )
-  return <Navigate to={newPath} replace />
+
+  const newPath = Object.keys(params).reduce((path, key) => {
+    const value = params[key]
+    const safeValue = value && !value.startsWith(':') ? value : ''
+    return path.replace(`:${key}`, safeValue)
+  }, to)
+
+  const normalizedPath = newPath.replace(/\/+$/, '') || '/gestion-locative'
+
+  return <Navigate to={normalizedPath} replace />
 }
 
 function App() {

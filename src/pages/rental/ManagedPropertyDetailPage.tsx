@@ -45,7 +45,7 @@ export default function ManagedPropertyDetailPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: `/gestion/biens/${id}` } })
+      navigate('/connexion', { state: { from: `/gestion-locative/biens/${id}` } })
       return
     }
 
@@ -163,7 +163,7 @@ export default function ManagedPropertyDetailPage() {
         <div className="card bg-red-50 border border-red-200">
           <p className="text-red-700">{error}</p>
           <button
-            onClick={() => navigate('/gestion/biens')}
+            onClick={() => navigate('/gestion-locative/biens')}
             className="btn-secondary mt-4"
           >
             Retour à la liste
@@ -182,7 +182,7 @@ export default function ManagedPropertyDetailPage() {
       {/* En-tête */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/gestion/biens')}
+          onClick={() => navigate('/gestion-locative/biens')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -481,7 +481,7 @@ export default function ManagedPropertyDetailPage() {
                 Ce bien est actuellement occupé. Cliquez pour voir les détails.
               </p>
               <button
-                onClick={() => navigate(`/gestion/locataires?property=${property.id}`)}
+                onClick={() => navigate(`/gestion-locative/locataires?property=${property.id}`)}
                 className="btn-primary w-full"
               >
                 Voir le locataire
@@ -500,7 +500,7 @@ export default function ManagedPropertyDetailPage() {
                 gestion.
               </p>
               <button
-                onClick={() => navigate(`/gestion/locataires/nouveau?property=${property.id}`)}
+                onClick={() => navigate(`/gestion-locative/locataires/nouveau?property=${property.id}`)}
                 className="btn-primary w-full flex items-center justify-center space-x-2"
               >
                 <UserPlus size={18} />
@@ -514,7 +514,7 @@ export default function ManagedPropertyDetailPage() {
             <h3 className="text-lg font-bold mb-4">Actions rapides</h3>
             <div className="space-y-2">
               <button
-                onClick={() => navigate(`/gestion/paiements?property=${property.id}`)}
+                onClick={() => navigate(`/gestion-locative/paiements?property=${property.id}`)}
                 className="w-full btn-secondary flex items-center justify-center space-x-2"
               >
                 <DollarSign size={18} />

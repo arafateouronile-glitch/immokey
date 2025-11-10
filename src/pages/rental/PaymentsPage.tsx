@@ -42,7 +42,7 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/paiements' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/paiements' } })
       return
     }
 
@@ -223,7 +223,7 @@ export default function PaymentsPage() {
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/gestion/paiements/nouveau')}
+                onClick={() => navigate('/gestion-locative/paiements/nouveau')}
                 className="btn-primary flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
               >
                 <Plus size={24} />
@@ -393,7 +393,7 @@ export default function PaymentsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ y: -3, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                      onClick={() => navigate(`/gestion/paiements/echeances/${dueDate.id}`)}
+                      onClick={() => navigate(`/gestion-locative/paiements/echeances/${dueDate.id}`)}
                       className="card cursor-pointer overflow-hidden group"
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -448,7 +448,7 @@ export default function PaymentsPage() {
                               whileTap={{ scale: 0.95 }}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                navigate(`/gestion/paiements/nouveau?due_date=${dueDate.id}`)
+                                navigate(`/gestion-locative/paiements/nouveau?due_date=${dueDate.id}`)
                               }}
                               className="btn-primary flex items-center gap-2"
                             >
@@ -497,7 +497,7 @@ export default function PaymentsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                       whileHover={{ y: -3, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                      onClick={() => navigate(`/gestion/paiements/${payment.id}`)}
+                      onClick={() => navigate(`/gestion-locative/paiements/${payment.id}`)}
                       className="card cursor-pointer overflow-hidden group"
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -550,7 +550,7 @@ export default function PaymentsPage() {
                             whileTap={{ scale: 0.95 }}
                             onClick={(e) => {
                               e.stopPropagation()
-                              navigate(`/gestion/paiements/${payment.id}`)
+                              navigate(`/gestion-locative/paiements/${payment.id}`)
                             }}
                             className="btn-secondary flex items-center gap-2"
                           >

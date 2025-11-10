@@ -26,7 +26,7 @@ export default function TenantsPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/locataires' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/locataires' } })
       return
     }
 
@@ -178,7 +178,7 @@ export default function TenantsPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/gestion/locataires/nouveau')}
+              onClick={() => navigate('/gestion-locative/locataires/nouveau')}
               className="btn-primary flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
             >
               <Plus size={24} />
@@ -293,7 +293,7 @@ export default function TenantsPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/gestion/locataires/nouveau')}
+                    onClick={() => navigate('/gestion-locative/locataires/nouveau')}
                     className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
                   >
                     <Plus size={24} />
@@ -390,7 +390,7 @@ export default function TenantsPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          navigate(`/gestion/locataires/${tenant.id}`)
+                          navigate(`/gestion-locative/locataires/${tenant.id}`)
                         }}
                         className="btn-primary flex-1 flex items-center justify-center gap-2"
                       >

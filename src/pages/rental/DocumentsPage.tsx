@@ -33,7 +33,7 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/documents' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/documents' } })
       return
     }
 
@@ -224,7 +224,7 @@ export default function DocumentsPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/gestion/documents/nouveau')}
+              onClick={() => navigate('/gestion-locative/documents/nouveau')}
               className="btn-primary flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
             >
               <Upload size={24} />
@@ -360,7 +360,7 @@ export default function DocumentsPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/gestion/documents/nouveau')}
+                    onClick={() => navigate('/gestion-locative/documents/nouveau')}
                     className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
                   >
                     <Upload size={24} />

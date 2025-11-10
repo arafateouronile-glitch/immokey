@@ -45,7 +45,7 @@ export default function CreateManagedPropertyPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/biens/nouveau' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/biens/nouveau' } })
       return
     }
 
@@ -100,7 +100,7 @@ export default function CreateManagedPropertyPage() {
       }
 
       const property = await createManagedProperty(propertyData)
-      navigate(`/gestion/biens/${property.id}`)
+      navigate(`/gestion-locative/biens/${property.id}`)
     } catch (err: any) {
       console.error('Error creating property:', err)
       setError(err.message || 'Erreur lors de la création du bien')
@@ -129,7 +129,7 @@ export default function CreateManagedPropertyPage() {
       {/* En-tête */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/gestion/biens')}
+          onClick={() => navigate('/gestion-locative/biens')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -358,7 +358,7 @@ export default function CreateManagedPropertyPage() {
         <div className="flex items-center justify-end space-x-4">
           <button
             type="button"
-            onClick={() => navigate('/gestion/biens')}
+            onClick={() => navigate('/gestion-locative/biens')}
             className="btn-secondary"
           >
             Annuler

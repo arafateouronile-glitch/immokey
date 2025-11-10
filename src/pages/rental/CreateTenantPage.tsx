@@ -36,7 +36,7 @@ export default function CreateTenantPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/locataires/nouveau' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/locataires/nouveau' } })
       return
     }
 
@@ -126,7 +126,7 @@ export default function CreateTenantPage() {
         notes: formData.notes || undefined,
       })
 
-      navigate(`/gestion/locataires/${tenant.id}`)
+      navigate(`/gestion-locative/locataires/${tenant.id}`)
     } catch (err: any) {
       console.error('Error creating tenant:', err)
       setError(err.message || 'Erreur lors de la création du locataire')
@@ -159,7 +159,7 @@ export default function CreateTenantPage() {
       {/* En-tête */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/gestion/locataires')}
+          onClick={() => navigate('/gestion-locative/locataires')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -419,7 +419,7 @@ export default function CreateTenantPage() {
         <div className="flex items-center justify-end space-x-4">
           <button
             type="button"
-            onClick={() => navigate('/gestion/locataires')}
+            onClick={() => navigate('/gestion-locative/locataires')}
             className="btn-secondary"
           >
             Annuler

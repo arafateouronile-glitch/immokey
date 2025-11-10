@@ -46,7 +46,7 @@ export default function TenantDetailPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: `/gestion/locataires/${id}` } })
+      navigate('/connexion', { state: { from: `/gestion-locative/locataires/${id}` } })
       return
     }
 
@@ -147,7 +147,7 @@ export default function TenantDetailPage() {
 
     try {
       await terminateTenant(id!)
-      navigate('/gestion/locataires')
+      navigate('/gestion-locative/locataires')
     } catch (err: any) {
       console.error('Error terminating tenant:', err)
       setError(err.message || 'Erreur lors de la terminaison')
@@ -182,7 +182,7 @@ export default function TenantDetailPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="card bg-red-50 border border-red-200">
           <p className="text-red-700">{error}</p>
-          <button onClick={() => navigate('/gestion/locataires')} className="btn-secondary mt-4">
+          <button onClick={() => navigate('/gestion-locative/locataires')} className="btn-secondary mt-4">
             Retour à la liste
           </button>
         </div>
@@ -201,7 +201,7 @@ export default function TenantDetailPage() {
       {/* En-tête */}
       <div className="mb-8">
         <button
-          onClick={() => navigate('/gestion/locataires')}
+          onClick={() => navigate('/gestion-locative/locataires')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />
@@ -485,7 +485,7 @@ export default function TenantDetailPage() {
             <h3 className="text-lg font-bold mb-4">Actions rapides</h3>
             <div className="space-y-2">
               <button
-                onClick={() => navigate(`/gestion/paiements?tenant=${tenant.id}`)}
+                onClick={() => navigate(`/gestion-locative/paiements?tenant=${tenant.id}`)}
                 className="w-full btn-primary flex items-center justify-center space-x-2"
               >
                 <DollarSign size={18} />
@@ -493,7 +493,7 @@ export default function TenantDetailPage() {
               </button>
 
               <button
-                onClick={() => navigate(`/gestion/messages?tenant=${tenant.id}`)}
+                onClick={() => navigate(`/gestion-locative/messages?tenant=${tenant.id}`)}
                 className="w-full btn-secondary flex items-center justify-center space-x-2"
               >
                 <MessageCircle size={18} />
@@ -510,7 +510,7 @@ export default function TenantDetailPage() {
                 <p className="font-medium">{property.name}</p>
                 <p className="text-sm text-gray-600">{property.address}</p>
                 <button
-                  onClick={() => navigate(`/gestion/biens/${property.id}`)}
+                  onClick={() => navigate(`/gestion-locative/biens/${property.id}`)}
                   className="w-full btn-secondary text-sm mt-4"
                 >
                   Voir le bien

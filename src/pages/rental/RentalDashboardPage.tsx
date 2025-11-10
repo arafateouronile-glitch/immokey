@@ -145,7 +145,7 @@ export default function RentalDashboardPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/gestion/biens/nouveau')}
+              onClick={() => navigate('/gestion-locative/biens/nouveau')}
               className="btn-primary flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
             >
               <Plus size={24} />
@@ -260,10 +260,10 @@ export default function RentalDashboardPage() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
         >
           {[
-            { icon: Home, title: 'Mes Biens', desc: 'Gérer mes biens', path: '/gestion/biens', color: 'text-blue-600', bg: 'hover:bg-blue-50' },
-            { icon: Users, title: 'Locataires', desc: 'Gérer les locataires', path: '/gestion/locataires', color: 'text-green-600', bg: 'hover:bg-green-50' },
-            { icon: DollarSign, title: 'Paiements', desc: 'Suivi paiements', path: '/gestion/paiements', color: 'text-purple-600', bg: 'hover:bg-purple-50' },
-            { icon: FileText, title: 'Documents', desc: 'Gérer documents', path: '/gestion/documents', color: 'text-orange-600', bg: 'hover:bg-orange-50' },
+            { icon: Home, title: 'Mes Biens', desc: 'Gérer mes biens', path: '/gestion-locative/biens', color: 'text-blue-600', bg: 'hover:bg-blue-50' },
+            { icon: Users, title: 'Locataires', desc: 'Gérer les locataires', path: '/gestion-locative/locataires', color: 'text-green-600', bg: 'hover:bg-green-50' },
+            { icon: DollarSign, title: 'Paiements', desc: 'Suivi paiements', path: '/gestion-locative/paiements', color: 'text-purple-600', bg: 'hover:bg-purple-50' },
+            { icon: FileText, title: 'Documents', desc: 'Gérer documents', path: '/gestion-locative/documents', color: 'text-orange-600', bg: 'hover:bg-orange-50' },
           ].map((item, index) => (
             <motion.button
               key={index}
@@ -405,7 +405,7 @@ export default function RentalDashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Mes Biens</h2>
             <button
-              onClick={() => navigate('/gestion/biens')}
+              onClick={() => navigate('/gestion-locative/biens')}
               className="text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 group"
             >
               <span>Voir tout</span>
@@ -432,7 +432,7 @@ export default function RentalDashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/gestion/biens/nouveau')}
+                onClick={() => navigate('/gestion-locative/biens/nouveau')}
                 className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
               >
                 <Plus size={24} />
@@ -448,7 +448,7 @@ export default function RentalDashboardPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.3 + index * 0.1 }}
                   whileHover={{ y: -5, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                  onClick={() => navigate(`/gestion/biens/${property.id}`)}
+                  onClick={() => navigate(`/gestion-locative/biens/${property.id}`)}
                   className="border-2 border-gray-100 rounded-xl p-6 hover:border-primary-300 transition-all cursor-pointer group bg-white"
                 >
                   <div className="flex items-start justify-between mb-4">

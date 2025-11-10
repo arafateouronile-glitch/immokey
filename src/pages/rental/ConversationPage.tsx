@@ -32,7 +32,7 @@ export default function ConversationPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: `/gestion/messages/${propertyId}/${tenantId}` } })
+      navigate('/connexion', { state: { from: `/gestion-locative/messages/${propertyId}/${tenantId}` } })
       return
     }
 
@@ -179,7 +179,7 @@ export default function ConversationPage() {
       {/* En-tête */}
       <div className="mb-6">
         <button
-          onClick={() => navigate('/gestion/messages')}
+          onClick={() => navigate('/gestion-locative/messages')}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
         >
           <ArrowLeft size={20} className="mr-2" />

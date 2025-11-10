@@ -25,7 +25,7 @@ export default function ManagedPropertiesPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/gestion/biens' } })
+      navigate('/connexion', { state: { from: '/gestion-locative/biens' } })
       return
     }
 
@@ -173,7 +173,7 @@ export default function ManagedPropertiesPage() {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/gestion/biens/nouveau')}
+              onClick={() => navigate('/gestion-locative/biens/nouveau')}
               className="btn-primary flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
             >
               <Plus size={24} />
@@ -306,7 +306,7 @@ export default function ManagedPropertiesPage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate('/gestion/biens/nouveau')}
+                    onClick={() => navigate('/gestion-locative/biens/nouveau')}
                     className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg shadow-lg"
                   >
                     <Plus size={24} />
@@ -404,7 +404,7 @@ export default function ManagedPropertiesPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          navigate(`/gestion/biens/${property.id}`)
+                          navigate(`/gestion-locative/biens/${property.id}`)
                         }}
                         className="btn-primary flex-1 flex items-center justify-center gap-2"
                       >
@@ -416,7 +416,7 @@ export default function ManagedPropertiesPage() {
                         whileTap={{ scale: 0.9 }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          navigate(`/gestion/biens/${property.id}/modifier`)
+                          navigate(`/gestion-locative/biens/${property.id}/modifier`)
                         }}
                         className="p-3 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
                         title="Modifier"
