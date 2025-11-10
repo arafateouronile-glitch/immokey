@@ -42,7 +42,22 @@ export async function getRooms(establishmentId: string): Promise<HospitalityRoom
       .order('room_number', { ascending: true })
 
     if (error) throw error
-    return data || []
+
+    const normalizeArray = (value: any) => {
+      if (Array.isArray(value)) {
+        return value
+      }
+      if (value === null || value === undefined) {
+        return []
+      }
+      return [value]
+    }
+
+    return (data || []).map((room: any) => ({
+      ...room,
+      amenities: normalizeArray(room.amenities),
+      photo_urls: normalizeArray(room.photo_urls),
+    })) as HospitalityRoom[]
   } catch (error: any) {
     console.error('Error fetching rooms:', error)
     throw error

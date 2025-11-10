@@ -31,7 +31,27 @@ export async function getEstablishments(): Promise<HospitalityEstablishment[]> {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+
+    const normalizeArray = (value: any) => {
+      if (Array.isArray(value)) {
+        return value
+      }
+      if (value === null || value === undefined) {
+        return []
+      }
+      return [value]
+    }
+
+    return (data || []).map((establishment: any) => {
+      const photoUrls = normalizeArray(establishment.photo_urls)
+
+      return {
+        ...establishment,
+        amenities: normalizeArray(establishment.amenities),
+        photo_urls: photoUrls,
+        cover_image_url: establishment.cover_image_url || photoUrls[0] || undefined,
+      }
+    }) as HospitalityEstablishment[]
   } catch (error: any) {
     console.error('Error fetching establishments:', error)
     throw error
