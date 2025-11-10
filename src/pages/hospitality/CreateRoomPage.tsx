@@ -9,7 +9,7 @@ import { createRoom } from '@/services/hospitality/roomService'
 import { getEstablishment } from '@/services/hospitality/establishmentService'
 import AmenitiesSelector from '@/components/forms/AmenitiesSelector'
 import ImageUploader from '@/components/forms/ImageUploader'
-import { uploadListingImages } from '@/services/imageService'
+import { uploadListingImages } from '@/services/hospitality/establishmentImageService'
 
 const roomSchema = z.object({
   room_number: z.string().min(1, 'Le numéro de chambre est requis'),
@@ -119,7 +119,6 @@ export default function CreateRoomPage() {
       if (selectedImages.length > 0) {
         setUploadProgress(`Upload de ${selectedImages.length} photo(s)...`)
         const photoUrls = await uploadListingImages(selectedImages, room.id)
-        // Importer updateRoom pour mettre à jour les photos
         const { updateRoom } = await import('@/services/hospitality/roomService')
         await updateRoom(room.id, { photo_urls: photoUrls } as any)
       }
