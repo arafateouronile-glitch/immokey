@@ -40,6 +40,7 @@ export default function PaymentsPage() {
     overdue_count: 0,
     paid_count: 0,
   })
+  const [overdueAlertShown, setOverdueAlertShown] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -100,6 +101,19 @@ export default function PaymentsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state])
 
+  const overdueDueDates = dueDates.filter((dd) => dd.status === 'overdue')
+
+  useEffect(() => {
+    if (stats.overdue_count > 0 && !overdueAlertShown) {
+      toast.error(`${stats.overdue_count} échéance(s) en retard. Pensez à relancer vos locataires.`, {
+        id: 'overdue-alert',
+      })
+      setOverdueAlertShown(true)
+    } else if (stats.overdue_count === 0 && overdueAlertShown) {
+      setOverdueAlertShown(false)
+    }
+  }, [stats.overdue_count, overdueAlertShown])
+
   const filteredDueDates = dueDates.filter((dd) => {
     if (statusFilter !== 'all' && dd.status !== statusFilter) return false
     if (searchQuery.trim()) {
@@ -156,8 +170,29 @@ export default function PaymentsPage() {
     return labels[method] || method
   }
 
+  const openMailClient = (email: string, subject: string, body: string) => {
+    const mailto = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    window.open(mailto, '_blank')
+  }
+
+  const handleSendReminder = (tenantName: string, tenantEmail: string | undefined, amount: number, dueDate: string) => {
+    if (!tenantEmail) {
+      toast.error(`Aucune adresse email pour ${tenantName}`)
+      return
+    }
+    const subject = 'Rappel de paiement - ImmoKey'
+    const body = `Bonjour ${tenantName},
+
+Ce message est un rappel concernant votre loyer d'un montant de ${formatPrice(amount)} FCFA, dû le ${dueDate}. Merci de procéder au règlement dès que possible ou de nous contacter si nécessaire.
+
+Bien cordialement,
+Votre gestionnaire ImmoKey.`
+    openMailClient(tenantEmail, subject, body)
+    toast.success('Rappel email prêt à être envoyé')
+  }
+
   const sanitizeCSVValue = (value: string) => {
-    const safeValue = value.replace(/"/g, '')
+    const safeValue = value.replace(/"/g, '""')
     return `"${safeValue}"`
   }
 
@@ -174,6 +209,30 @@ export default function PaymentsPage() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  const handleBulkReminders = () => {
+    const overdueWithEmail = overdueDueDates
+      .map((dd) => {
+        const tenant = tenants.find((t) => t.id === dd.tenant_id)
+        return {
+          tenant,
+          dd,
+        }
+      })
+      .filter((item) => item.tenant?.email)
+
+    if (overdueWithEmail.length === 0) {
+      toast.error('Aucun email disponible pour envoyer des rappels')
+      return
+    }
+
+    overdueWithEmail.forEach(({ tenant, dd }) => {
+      if (!tenant) return
+      const dueDateFormatted = dd.due_date ? formatDate(dd.due_date) : ''
+      handleSendReminder(tenant.full_name, tenant.email, dd.total_amount, dueDateFormatted)
+    })
+    toast.success('Rappels ouverts dans votre messagerie')
   }
 
   const handleExport = () => {
@@ -322,7 +381,18 @@ export default function PaymentsPage() {
                 Suivi complet de vos revenus locatifs
               </motion.p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap justify-end">
+              {stats.overdue_count > 0 && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleBulkReminders}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition"
+                >
+                  <AlertCircle size={20} />
+                  <span>Relancer {stats.overdue_count} locataire(s)</span>
+                </motion.button>
+              )}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -554,6 +624,21 @@ export default function PaymentsPage() {
                             </p>
                             <p className="text-xs text-gray-500">FCFA</p>
                           </div>
+                          {dueDate.status === 'overdue' && tenant && (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const dueDateFormatted = dueDate.due_date ? formatDate(dueDate.due_date) : ''
+                                handleSendReminder(tenant.full_name, tenant.email, dueDate.total_amount, dueDateFormatted)
+                              }}
+                              className="flex items-center gap-2 rounded-lg bg-amber-500 text-white px-4 py-2 hover:bg-amber-600 transition"
+                            >
+                              <AlertCircle size={16} />
+                              <span>Relancer</span>
+                            </motion.button>
+                          )}
                           {dueDate.status === 'pending' && (
                             <motion.button
                               whileHover={{ scale: 1.05 }}
