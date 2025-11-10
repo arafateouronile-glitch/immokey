@@ -8,9 +8,18 @@ export async function uploadImage(file: File, bucket: string = 'listings'): Prom
     throw new Error('Fichier invalide')
   }
 
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    throw new Error('Vous devez être connecté pour uploader des images')
+  }
+
   const fileExt = file.name?.split('.').pop() || 'jpg'
   const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
-  const filePath = `${fileName}`
+  const filePath = `${user.id}/${fileName}`
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
@@ -31,12 +40,23 @@ export async function uploadImage(file: File, bucket: string = 'listings'): Prom
  */
 export async function deleteImage(url: string, bucket: string = 'listings'): Promise<void> {
   try {
-    const path = url.split('/').pop()
-    if (!path) return
+    const parsed = new URL(url)
+    const prefix = `/storage/v1/object/public/${bucket}/`
+    let storagePath = parsed.pathname
+
+    if (storagePath.startsWith(prefix)) {
+      storagePath = storagePath.slice(prefix.length)
+    } else {
+      storagePath = storagePath.split(`${bucket}/`).pop() || ''
+    }
+
+    storagePath = storagePath.replace(/^\/+/, '')
+
+    if (!storagePath) return
 
     const { error } = await supabase.storage
       .from(bucket)
-      .remove([path])
+      .remove([storagePath])
 
     if (error) {
       console.error('Error deleting image:', error)
