@@ -487,18 +487,25 @@ export async function getPaymentStats(tenantId?: string, propertyId?: string) {
   }
 
   try {
-    let dueDatesQuery = supabase.from('payment_due_dates').select('*')
-    
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      throw new Error('Vous devez être connecté')
+    }
+
+    let dueDates
+    let payments
+
     if (tenantId) {
-      dueDatesQuery = dueDatesQuery.eq('tenant_id', tenantId)
+      dueDates = await getDueDatesByTenant(tenantId)
+      payments = (await getPaymentsByTenant(tenantId)) || []
+    } else if (propertyId) {
+      dueDates = await getDueDatesByProperty(propertyId)
+      payments = (await getAllPayments()).filter((payment) => payment.managed_property_id === propertyId)
+    } else {
+      dueDates = await getAllDueDates()
+      payments = await getAllPayments()
     }
-    if (propertyId) {
-      dueDatesQuery = dueDatesQuery.eq('managed_property_id', propertyId)
-    }
-
-    const { data: dueDates, error: dueDatesError } = await dueDatesQuery
-
-    if (dueDatesError) throw dueDatesError
 
     const stats = {
       total_due: 0,
@@ -509,21 +516,19 @@ export async function getPaymentStats(tenantId?: string, propertyId?: string) {
     }
 
     for (const dueDate of dueDates || []) {
-      stats.total_due += Number(dueDate.total_amount)
+      stats.total_due += Number(dueDate.total_amount || 0)
 
       if (dueDate.status === 'paid') {
-        stats.total_paid += Number(dueDate.total_amount)
         stats.paid_count++
       } else if (dueDate.status === 'pending') {
         stats.pending_count++
       } else if (dueDate.status === 'overdue') {
         stats.overdue_count++
-        // Calculer aussi les paiements partiels pour les échéances en retard
-        const payments = await getPaymentsByDueDate(dueDate.id)
-        const paid = payments.reduce((sum, p) => sum + Number(p.amount), 0)
-        stats.total_paid += paid
       }
     }
+
+    const relevantPayments = payments || []
+    stats.total_paid = relevantPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
 
     return stats
   } catch (error: any) {
