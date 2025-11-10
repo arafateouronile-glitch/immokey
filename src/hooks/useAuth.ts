@@ -24,12 +24,29 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    if (data?.user) {
+      setUser(data.user)
+    }
+
+    return data
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
     setUser(null)
   }
 
-  return { user, loading, signOut }
+  return { user, loading, signIn, signOut }
 }
 
 
