@@ -79,12 +79,20 @@ export default function HospitalityDashboardPage() {
     setRevenueLoading(true)
     try {
       const data = await getRevenueData(revenuePeriod)
+      const chartData = Array.isArray(data?.data)
+        ? data.data.map((point: any) => ({
+            month: point.date,
+            revenue: Number(point.revenue) || 0,
+            bookings: Number(point.bookings) || 0,
+          }))
+        : []
+
       setRevenueData({
         total: Number(data?.total) || 0,
         average: Number(data?.average) || 0,
         growth: Number(data?.growth) || 0,
         period: data?.period || revenuePeriod,
-        data: Array.isArray(data?.data) ? data.data : [],
+        data: chartData,
       })
     } catch (err: any) {
       console.error('Error fetching revenue data:', err)
@@ -278,7 +286,7 @@ export default function HospitalityDashboardPage() {
               </div>
             </div>
           ) : revenueData ? (
-            <RevenueChart data={revenueData} period={revenuePeriod} />
+            <RevenueChart data={Array.isArray(revenueData.data) ? revenueData.data : []} period={revenuePeriod} />
           ) : null}
         </div>
 
