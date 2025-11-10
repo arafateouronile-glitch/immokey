@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, SlidersHorizontal, Grid3x3, List, Euro, Home, Building2, X, Check, Filter } from 'lucide-react'
+import { Search, SlidersHorizontal, Grid3x3, List, Home, Check } from 'lucide-react'
 import SEO from '@/components/seo/SEO'
 import { useListings } from '@/hooks/useListings'
 import ListingCard from '@/components/listings/ListingCard'
@@ -57,6 +57,31 @@ const AMENITIES = [
   'Sécurité 24/7',
   'Meublé',
   'Internet haut débit',
+]
+
+const PRICE_PRESETS: Record<'location' | 'vente', Array<{ label: string; min: string; max: string }>> =
+  {
+    location: [
+      { label: '≤ 100 000 FCFA', min: '0', max: '100000' },
+      { label: '100 000 - 250 000 FCFA', min: '100000', max: '250000' },
+      { label: '250 000 - 500 000 FCFA', min: '250000', max: '500000' },
+      { label: '500 000 - 1 000 000 FCFA', min: '500000', max: '1000000' },
+      { label: '≥ 1 000 000 FCFA', min: '1000000', max: '' },
+    ],
+    vente: [
+      { label: '≤ 30 M FCFA', min: '0', max: '30000000' },
+      { label: '30 - 80 M FCFA', min: '30000000', max: '80000000' },
+      { label: '80 - 150 M FCFA', min: '80000000', max: '150000000' },
+      { label: '150 - 300 M FCFA', min: '150000000', max: '300000000' },
+      { label: '≥ 300 M FCFA', min: '300000000', max: '' },
+    ],
+  }
+
+const AREA_PRESETS = [
+  { label: '≥ 50 m²', value: '50' },
+  { label: '≥ 100 m²', value: '100' },
+  { label: '≥ 200 m²', value: '200' },
+  { label: '≥ 500 m²', value: '500' },
 ]
 
 export default function SearchPage() {
@@ -174,11 +199,33 @@ export default function SearchPage() {
     })
   }, [filters, listings])
 
+  const pricePresets = useMemo(
+    () =>
+      filters.listingType === 'vente'
+        ? PRICE_PRESETS.vente
+        : PRICE_PRESETS.location,
+    [filters.listingType]
+  )
+
+  const handlePricePreset = (preset: { min: string; max: string }) => {
+    handleFilterChange('minPrice', preset.min)
+    handleFilterChange('maxPrice', preset.max)
+  }
+
+  const handleAreaPreset = (value: string) => {
+    handleFilterChange('minArea', value)
+  }
+
+  const isPricePresetActive = (preset: { min: string; max: string }) =>
+    filters.minPrice === preset.min && filters.maxPrice === preset.max
+
+  const isAreaPresetActive = (value: string) => filters.minArea === value
+
   const handleFilterChange = (
     key: keyof Filters,
     value: string | Filters['listingType'] | Filters['availability']
   ) => {
-    setFilters((prev) => ({ ...prev, [key]: value as any }))
+    setFilters((prev) => ({ ...prev, [key]: value as Filters[keyof Filters] }))
   }
 
   const handleAmenityToggle = (amenity: string) => {
@@ -254,154 +301,104 @@ export default function SearchPage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-4"
             >
-              {/* Barre de recherche principale */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-                  <input
-                    type="text"
-                    placeholder="Rechercher par ville, quartier..."
-                    value={filters.search}
-                    onChange={(e) =>
-                      handleFilterChange('search', e.target.value)
-                    }
-                    className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  />
-                </div>
-                <motion.button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                    showFilters
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                  }`}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <SlidersHorizontal className="h-5 w-5" />
-                  <span>Filtres</span>
-                </motion.button>
-              </div>
-
-              {/* Filtres rapides */}
-              <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-2">
-                <div className="flex items-center gap-2">
-                  {QUICK_PROPERTY_FILTERS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => handleFilterChange('propertyType', option.value)}
-                      className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                        filters.propertyType === option.value
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-600'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 pl-4 border-l border-neutral-200">
-                  <Filter className="h-4 w-4 text-neutral-400" />
-                  <span className="text-sm font-semibold text-neutral-600">Transaction :</span>
-                  {['all', 'location', 'vente'].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() =>
-                        handleFilterChange('listingType', type as Filters['listingType'])
+              <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm">
+                <div className="grid gap-3 p-4 lg:grid-cols-12">
+                  <div className="relative lg:col-span-5">
+                    <Home className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Ville, quartier, adresse..."
+                      value={filters.location}
+                      onChange={(e) => handleFilterChange('location', e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div className="relative lg:col-span-4">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Mots-clés (meublé, terrasse, standing...)"
+                      value={filters.search}
+                      onChange={(e) => handleFilterChange('search', e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div className="lg:col-span-3">
+                    <span className="block text-xs font-semibold text-neutral-600 mb-2">
+                      Transaction
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {(['all', 'location', 'vente'] as Filters['listingType'][]).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => handleFilterChange('listingType', type)}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                            filters.listingType === type
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-white border border-neutral-300 text-neutral-700 hover:border-emerald-500'
+                          }`}
+                        >
+                          {type === 'all' ? 'Tout' : type === 'location' ? 'Location' : 'Vente'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-semibold text-neutral-600 mb-2">
+                      Type de bien
+                    </label>
+                    <select
+                      value={filters.propertyType}
+                      onChange={(e) =>
+                        handleFilterChange('propertyType', e.target.value as PropertyTypeFilter)
                       }
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        filters.listingType === type
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-white border border-neutral-300 text-neutral-700 hover:border-emerald-500'
-                      }`}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
-                      {type === 'all' ? 'Tout' : type === 'location' ? 'Location' : 'Vente'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Panneau de filtres avancés */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white border-b border-neutral-200 overflow-hidden"
-            >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Prix min/max */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      {QUICK_PROPERTY_FILTERS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-semibold text-neutral-600 mb-2">
                       Prix minimum (FCFA)
                     </label>
                     <input
                       type="number"
-                      placeholder="50 000"
+                      placeholder="Min"
                       value={filters.minPrice}
-                      onChange={(e) =>
-                        handleFilterChange('minPrice', e.target.value)
-                      }
+                      onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <div className="lg:col-span-3">
+                    <label className="block text-xs font-semibold text-neutral-600 mb-2">
                       Prix maximum (FCFA)
                     </label>
                     <input
                       type="number"
-                      placeholder="500 000"
+                      placeholder="Max"
                       value={filters.maxPrice}
-                      onChange={(e) =>
-                        handleFilterChange('maxPrice', e.target.value)
-                      }
+                      onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
-
-                  {/* Chambres/Salles de bain */}
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Chambres min.
-                    </label>
-                    <select
-                      value={filters.bedrooms}
-                      onChange={(e) =>
-                        handleFilterChange('bedrooms', e.target.value)
-                      }
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  <div className="lg:col-span-3 flex items-end">
+                    <motion.button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={`flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                        showFilters
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <option value="">Toutes</option>
-                      <option value="1">1+</option>
-                      <option value="2">2+</option>
-                      <option value="3">3+</option>
-                      <option value="4">4+</option>
-                      <option value="5">5+</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Salles de bain min.
-                    </label>
-                    <select
-                      value={filters.bathrooms}
-                      onChange={(e) =>
-                        handleFilterChange('bathrooms', e.target.value)
-                      }
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    >
-                      <option value="">Toutes</option>
-                      <option value="1">1+</option>
-                      <option value="2">2+</option>
-                      <option value="3">3+</option>
-                    </select>
+                      <SlidersHorizontal className="h-5 w-5" />
+                      <span>Filtres avancés</span>
+                    </motion.button>
                   </div>
                 </div>
 
@@ -455,6 +452,137 @@ export default function SearchPage() {
                         )
                       })}
                     </div>
+                  </div>
+                </div>
+
+                <div className="px-4 pb-4 space-y-3 border-t border-neutral-100">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-neutral-600">Budget rapide :</span>
+                    {pricePresets.map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => handlePricePreset(preset)}
+                        className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                          isPricePresetActive(preset)
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white border border-neutral-300 text-neutral-700 hover:border-primary-500'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        handleFilterChange('minPrice', '')
+                        handleFilterChange('maxPrice', '')
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-700"
+                    >
+                      Effacer
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-neutral-600">Surface min. :</span>
+                    {AREA_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => handleAreaPreset(preset.value)}
+                        className={`px-3 py-2 rounded-lg text-sm transition-all ${
+                          isAreaPresetActive(preset.value)
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-white border border-neutral-300 text-neutral-700 hover:border-emerald-500'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handleFilterChange('minArea', '')}
+                      className="px-3 py-2 rounded-lg text-sm text-neutral-500 hover:text-neutral-700"
+                    >
+                      Effacer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Panneau de filtres avancés */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white border-b border-neutral-200 overflow-hidden"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Surface minimum (m²)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex. 80"
+                      value={filters.minArea}
+                      onChange={(e) => handleFilterChange('minArea', e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Surface maximum (m²)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="Ex. 200"
+                      value={filters.maxArea}
+                      onChange={(e) => handleFilterChange('maxArea', e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Chambres/Salles de bain */}
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Chambres min.
+                    </label>
+                    <select
+                      value={filters.bedrooms}
+                      onChange={(e) =>
+                        handleFilterChange('bedrooms', e.target.value)
+                      }
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="">Toutes</option>
+                      <option value="1">1+</option>
+                      <option value="2">2+</option>
+                      <option value="3">3+</option>
+                      <option value="4">4+</option>
+                      <option value="5">5+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Salles de bain min.
+                    </label>
+                    <select
+                      value={filters.bathrooms}
+                      onChange={(e) =>
+                        handleFilterChange('bathrooms', e.target.value)
+                      }
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="">Toutes</option>
+                      <option value="1">1+</option>
+                      <option value="2">2+</option>
+                      <option value="3">3+</option>
+                    </select>
                   </div>
                 </div>
 
