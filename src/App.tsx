@@ -104,6 +104,7 @@ function App() {
               <Route index element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
               <Route path="recherche" element={<Suspense fallback={<PageLoader />}><SearchPage /></Suspense>} />
               <Route path="annonces/:id" element={<Suspense fallback={<PageLoader />}><ListingDetailPage /></Suspense>} />
+              <Route path="annonce/:id" element={<RedirectWithParams from="/annonce/:id" to="/annonces/:id" />} />
               <Route path="annonces/creer" element={<Suspense fallback={<PageLoader />}><CreateListingPage /></Suspense>} />
               <Route path="publier" element={<Navigate to="/annonces/creer" replace />} />
               <Route path="annonces/modifier/:id" element={<Suspense fallback={<PageLoader />}><EditListingPage /></Suspense>} />
