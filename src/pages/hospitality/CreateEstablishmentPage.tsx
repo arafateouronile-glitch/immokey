@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Save } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { createEstablishment, updateEstablishment } from '@/services/hospitality/establishmentService'
+import { createEstablishment, updateEstablishment, getEstablishment } from '@/services/hospitality/establishmentService'
 import AmenitiesSelector from '@/components/forms/AmenitiesSelector'
 import MapSelector from '@/components/maps/MapSelector'
 import ImageUploader from '@/components/forms/ImageUploader'
@@ -35,21 +35,26 @@ type EstablishmentForm = z.infer<typeof establishmentSchema>
 
 export default function CreateEstablishmentPage() {
   const navigate = useNavigate()
+  const { id: establishmentId } = useParams<{ id: string }>()
   const { user, loading: authLoading } = useAuth()
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(Boolean(establishmentId))
   const [error, setError] = useState<string | null>(null)
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
   const [latitude, setLatitude] = useState<number | undefined>(undefined)
   const [longitude, setLongitude] = useState<number | undefined>(undefined)
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [selectedImages, setSelectedImages] = useState<string[]>([])
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
+  const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<string>('')
+  const isEditMode = Boolean(establishmentId)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
+    reset,
   } = useForm<EstablishmentForm>({
     resolver: zodResolver(establishmentSchema),
     defaultValues: {
@@ -59,11 +64,62 @@ export default function CreateEstablishmentPage() {
   })
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/connexion', { state: { from: '/hotellerie/etablissements/nouveau' } })
+    if (authLoading) return
+
+    if (!user) {
+      const redirectPath = isEditMode
+        ? `/hotellerie/etablissements/modifier/${establishmentId}`
+        : '/hotellerie/etablissements/nouveau'
+      navigate('/connexion', { state: { from: redirectPath } })
       return
     }
-  }, [user, authLoading, navigate])
+
+    if (isEditMode && establishmentId) {
+      loadEstablishment(establishmentId)
+    } else {
+      setInitialLoading(false)
+    }
+  }, [user, authLoading, navigate, isEditMode, establishmentId, loadEstablishment])
+
+  const loadEstablishment = useCallback(async (id: string) => {
+    try {
+      setInitialLoading(true)
+      const data = await getEstablishment(id)
+
+      reset({
+        establishment_type: data.establishment_type as any,
+        name: data.name,
+        description: data.description || '',
+        address: data.address,
+        city: data.city,
+        neighborhood: data.neighborhood || '',
+        phone: data.phone,
+        email: data.email || '',
+        website: data.website || '',
+        registration_number: data.registration_number || '',
+        license_number: data.license_number || '',
+        tax_id: data.tax_id || '',
+        check_in_time: data.check_in_time || '14:00:00',
+        check_out_time: data.check_out_time || '12:00:00',
+        notes: data.notes || '',
+        latitude: data.latitude || undefined,
+        longitude: data.longitude || undefined,
+      })
+
+      setSelectedAmenities(Array.isArray(data.amenities) ? data.amenities : [])
+      setLatitude(data.latitude || undefined)
+      setLongitude(data.longitude || undefined)
+      setSelectedImages(Array.isArray(data.photo_urls) ? data.photo_urls : [])
+      setExistingCoverUrl(data.cover_image_url || null)
+    } catch (error) {
+      console.error('Error loading establishment:', error)
+      setError('Impossible de charger l\'établissement')
+      setInitialLoading(false)
+      navigate('/hotellerie/etablissements')
+      return
+    }
+    setInitialLoading(false)
+  }, [reset, navigate])
 
   const onSubmit = async (data: EstablishmentForm) => {
     if (!user) {
@@ -71,18 +127,17 @@ export default function CreateEstablishmentPage() {
       return
     }
 
-    setLoading(true)
+    setSubmitting(true)
     setError(null)
     setUploadProgress('')
 
     try {
-      setUploadProgress('Création de l\'établissement...')
+      setUploadProgress(isEditMode ? 'Mise à jour de l\'établissement...' : 'Création de l\'établissement...')
 
-      // 1. Créer l'établissement
-      const establishment = await createEstablishment({
+      const payload = {
         ...data,
-        latitude: latitude,
-        longitude: longitude,
+        latitude,
+        longitude,
         amenities: selectedAmenities,
         email: data.email || undefined,
         website: data.website || undefined,
@@ -94,42 +149,49 @@ export default function CreateEstablishmentPage() {
         neighborhood: data.neighborhood || undefined,
         description: data.description || undefined,
         notes: data.notes || undefined,
-      })
+      }
 
-      // 2. Uploader les images
-      let coverUrls: string[] = []
-      
-      if (coverImageFile || selectedImages.length > 0) {
-        setUploadProgress(`Upload de ${(coverImageFile ? 1 : 0) + selectedImages.length} photo(s)...`)
-        
-        // Upload de la photo de couverture
-        if (coverImageFile) {
-          coverUrls = await uploadEstablishmentImages([coverImageFile], establishment.id)
-          if (coverUrls.length > 0) {
-            await updateEstablishment(establishment.id, { cover_image_url: coverUrls[0] } as any)
-          }
-        }
+      let targetId = establishmentId || ''
 
-        // Upload des autres photos
-        if (selectedImages.length > 0) {
-          const photoUrls = await uploadEstablishmentImages(selectedImages, establishment.id)
-          // Combiner avec la photo de couverture si elle existe (sans la dupliquer)
-          const allPhotoUrls = coverUrls.length > 0 
-            ? [...photoUrls] // On ne met pas la couverture dans photo_urls car elle est déjà dans cover_image_url
-            : photoUrls
-          await updateEstablishment(establishment.id, { photo_urls: allPhotoUrls } as any)
+      if (isEditMode && establishmentId) {
+        await updateEstablishment(establishmentId, payload as any)
+        targetId = establishmentId
+      } else {
+        const created = await createEstablishment(payload)
+        targetId = created.id
+      }
+
+      let coverUrl = existingCoverUrl || undefined
+
+      if (coverImageFile) {
+        setUploadProgress('Upload de la photo de couverture...')
+        const coverUpload = await uploadEstablishmentImages([coverImageFile], targetId)
+        if (coverUpload.length > 0) {
+          coverUrl = coverUpload[0]
         }
       }
+
+      const galleryUrls = Array.from(new Set(selectedImages.filter(Boolean)))
+
+      const photoUpdates: Record<string, any> = {
+        photo_urls: galleryUrls,
+      }
+
+      if (coverUrl) {
+        photoUpdates.cover_image_url = coverUrl
+      }
+
+      await updateEstablishment(targetId, photoUpdates)
 
       setUploadProgress('Terminé !')
       
       // Rediriger vers la page de détails
-      navigate(`/hotellerie/etablissements/${establishment.id}`)
+      navigate(`/hotellerie/etablissements/${targetId}`)
     } catch (err: any) {
-      console.error('Error creating establishment:', err)
-      setError(err.message || 'Erreur lors de la création de l\'établissement')
+      console.error('Error saving establishment:', err)
+      setError(err.message || 'Erreur lors de l\'enregistrement de l\'établissement')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
       setUploadProgress('')
     }
   }
@@ -141,7 +203,7 @@ export default function CreateEstablishmentPage() {
     setValue('longitude', lng)
   }
 
-  if (authLoading) {
+  if (authLoading || initialLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -163,9 +225,13 @@ export default function CreateEstablishmentPage() {
           <ArrowLeft size={20} className="mr-2" />
           Retour à la liste
         </button>
-        <h1 className="text-3xl font-bold">Créer un établissement</h1>
+        <h1 className="text-3xl font-bold">
+          {isEditMode ? 'Modifier l\'établissement' : 'Créer un établissement'}
+        </h1>
         <p className="text-gray-600 mt-2">
-          Ajoutez un nouvel établissement d'hébergement à votre gestion
+          {isEditMode
+            ? 'Mettez à jour les informations de votre établissement'
+            : 'Ajoutez un nouvel établissement d\'hébergement à votre gestion'}
         </p>
       </div>
 
@@ -436,12 +502,26 @@ export default function CreateEstablishmentPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Photo de couverture
             </label>
+            {existingCoverUrl && !coverImageFile && (
+              <div className="mb-3">
+                <p className="text-xs text-gray-500 mb-1">Photo actuelle</p>
+                <img
+                  src={existingCoverUrl}
+                  alt="Photo de couverture actuelle"
+                  className="h-40 w-full object-cover rounded-lg border border-gray-200"
+                />
+              </div>
+            )}
             <input
               type="file"
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0]
-                if (file) setCoverImageFile(file)
+                if (file) {
+                  setCoverImageFile(file)
+                } else {
+                  setCoverImageFile(null)
+                }
               }}
               className="input-field"
             />
@@ -455,6 +535,7 @@ export default function CreateEstablishmentPage() {
               images={selectedImages}
               onImagesChange={setSelectedImages}
               maxImages={20}
+              bucket="listing-images"
             />
           </div>
         </div>
@@ -481,11 +562,19 @@ export default function CreateEstablishmentPage() {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitting}
             className="btn-primary flex items-center space-x-2"
           >
             <Save size={20} />
-            <span>{loading ? 'Création...' : 'Créer l\'établissement'}</span>
+            <span>
+              {submitting
+                ? isEditMode
+                  ? 'Mise à jour...'
+                  : 'Création...'
+                : isEditMode
+                  ? 'Mettre à jour l\'établissement'
+                  : 'Créer l\'établissement'}
+            </span>
           </button>
         </div>
       </form>

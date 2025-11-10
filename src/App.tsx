@@ -168,6 +168,7 @@ function App() {
               <Route path="dashboard" element={<Suspense fallback={<PageLoader />}><HospitalityDashboardPage /></Suspense>} />
               <Route path="etablissements" element={<Suspense fallback={<PageLoader />}><EstablishmentsPage /></Suspense>} />
               <Route path="etablissements/nouveau" element={<Suspense fallback={<PageLoader />}><CreateEstablishmentPage /></Suspense>} />
+              <Route path="etablissements/modifier/:id" element={<Suspense fallback={<PageLoader />}><CreateEstablishmentPage /></Suspense>} />
               <Route path="etablissements/:id" element={<Suspense fallback={<PageLoader />}><EstablishmentDetailPage /></Suspense>} />
               <Route path="chambres" element={<Suspense fallback={<PageLoader />}><RoomsPage /></Suspense>} />
               <Route path="chambres/nouvelle" element={<Suspense fallback={<PageLoader />}><CreateRoomPage /></Suspense>} />
