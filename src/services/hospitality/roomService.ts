@@ -12,6 +12,25 @@ export async function getRooms(establishmentId: string): Promise<HospitalityRoom
     return []
   }
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
+
+  const normalizeImageUrl = (value: string) => {
+    if (!value || typeof value !== 'string') {
+      return value
+    }
+
+    if (value.startsWith('http')) {
+      return value
+    }
+
+    if (!supabaseUrl) {
+      return value
+    }
+
+    const cleanedPath = value.replace(/^public\//, '').replace(/^storage\/v1\/object\/public\//, '')
+    return `${supabaseUrl}/storage/v1/object/public/${cleanedPath}`
+  }
+
   try {
     const {
       data: { user },
@@ -56,7 +75,7 @@ export async function getRooms(establishmentId: string): Promise<HospitalityRoom
     return (data || []).map((room: any) => ({
       ...room,
       amenities: normalizeArray(room.amenities),
-      photo_urls: normalizeArray(room.photo_urls),
+      photo_urls: normalizeArray(room.photo_urls).map((url: string) => normalizeImageUrl(url)),
     })) as HospitalityRoom[]
   } catch (error: any) {
     console.error('Error fetching rooms:', error)

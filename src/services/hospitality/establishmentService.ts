@@ -13,6 +13,25 @@ export async function getEstablishments(): Promise<HospitalityEstablishment[]> {
     return []
   }
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
+
+  const normalizeImageUrl = (value: string) => {
+    if (!value || typeof value !== 'string') {
+      return value
+    }
+
+    if (value.startsWith('http')) {
+      return value
+    }
+
+    if (!supabaseUrl) {
+      return value
+    }
+
+    const cleanedPath = value.replace(/^public\//, '').replace(/^storage\/v1\/object\/public\//, '')
+    return `${supabaseUrl}/storage/v1/object/public/${cleanedPath}`
+  }
+
   try {
     const {
       data: { user },
@@ -43,13 +62,15 @@ export async function getEstablishments(): Promise<HospitalityEstablishment[]> {
     }
 
     return (data || []).map((establishment: any) => {
-      const photoUrls = normalizeArray(establishment.photo_urls)
+      const photoUrls = normalizeArray(establishment.photo_urls).map((url: string) =>
+        normalizeImageUrl(url)
+      )
 
       return {
         ...establishment,
         amenities: normalizeArray(establishment.amenities),
         photo_urls: photoUrls,
-        cover_image_url: establishment.cover_image_url || photoUrls[0] || undefined,
+        cover_image_url: normalizeImageUrl(establishment.cover_image_url || photoUrls[0] || ''),
       }
     }) as HospitalityEstablishment[]
   } catch (error: any) {
