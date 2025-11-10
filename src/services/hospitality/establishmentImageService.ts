@@ -63,7 +63,7 @@ export async function uploadEstablishmentImage(
  * Uploader plusieurs images pour un établissement
  */
 export async function uploadEstablishmentImages(
-  files: File[],
+  files: (File | null | undefined)[],
   establishmentId: string
 ): Promise<string[]> {
   if (!isSupabaseConfigured) {
@@ -71,7 +71,15 @@ export async function uploadEstablishmentImages(
   }
 
   try {
-    const uploadPromises = files.map((file) =>
+    const validFiles = files.filter(
+      (file): file is File => file instanceof File
+    )
+
+    if (validFiles.length === 0) {
+      return []
+    }
+
+    const uploadPromises = validFiles.map((file) =>
       uploadEstablishmentImage(file, establishmentId)
     )
 
