@@ -22,6 +22,13 @@ export default function HospitalityDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const establishmentsList = Array.isArray(establishments) ? establishments : []
+  const normalizedStats = {
+    total: Number(stats.total) || 0,
+    active: Number(stats.active) || 0,
+    inactive: Number(stats.inactive) || 0,
+  }
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/connexion', { state: { from: '/hospitality' } })
@@ -176,7 +183,7 @@ export default function HospitalityDashboardPage() {
                 <TrendingUp size={20} className="opacity-60" />
               </div>
               <p className="text-primary-100 text-sm font-medium mb-1">Établissements</p>
-              <p className="text-4xl font-bold mb-1">{stats.total}</p>
+              <p className="text-4xl font-bold mb-1">{normalizedStats.total}</p>
               <p className="text-primary-200 text-xs">Total</p>
             </div>
           </div>
@@ -190,7 +197,7 @@ export default function HospitalityDashboardPage() {
                 <Sparkles size={20} className="opacity-60" />
               </div>
               <p className="text-emerald-100 text-sm font-medium mb-1">Actifs</p>
-              <p className="text-4xl font-bold mb-1">{stats.active}</p>
+              <p className="text-4xl font-bold mb-1">{normalizedStats.active}</p>
               <p className="text-emerald-200 text-xs">En activité</p>
             </div>
           </div>
@@ -203,7 +210,7 @@ export default function HospitalityDashboardPage() {
                 </div>
               </div>
               <p className="text-amber-100 text-sm font-medium mb-1">Inactifs</p>
-              <p className="text-4xl font-bold mb-1">{stats.inactive}</p>
+              <p className="text-4xl font-bold mb-1">{normalizedStats.inactive}</p>
               <p className="text-amber-200 text-xs">En pause</p>
             </div>
           </div>
@@ -217,7 +224,9 @@ export default function HospitalityDashboardPage() {
               </div>
               <p className="text-purple-100 text-sm font-medium mb-1">Taux d'activité</p>
               <p className="text-4xl font-bold mb-1">
-                {stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}%
+                {normalizedStats.total > 0
+                  ? Math.round((normalizedStats.active / normalizedStats.total) * 100)
+                  : 0}%
               </p>
               <p className="text-purple-200 text-xs">Performance</p>
             </div>
@@ -350,7 +359,7 @@ export default function HospitalityDashboardPage() {
               <h2 className="heading-3 mb-2">Mes établissements</h2>
               <p className="text-neutral-500">Vos établissements d'hébergement récents</p>
             </div>
-            {establishments.length > 0 && (
+            {establishmentsList.length > 0 && (
               <button
                 onClick={() => navigate('/hospitality/establishments')}
                 className="btn-ghost group"
@@ -361,7 +370,7 @@ export default function HospitalityDashboardPage() {
             )}
           </div>
 
-          {establishments.length === 0 ? (
+          {establishmentsList.length === 0 ? (
             <div className="text-center py-16 animate-fade-in">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary-50 to-primary-100 rounded-3xl mb-6">
                 <Building2 size={40} className="text-primary-400" />
@@ -380,7 +389,7 @@ export default function HospitalityDashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {establishments.slice(0, 6).map((establishment, index) => (
+              {establishmentsList.slice(0, 6).map((establishment, index) => (
                 <div
                   key={establishment.id}
                   onClick={() => navigate(`/hospitality/establishments/${establishment.id}`)}
