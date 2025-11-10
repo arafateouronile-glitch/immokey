@@ -428,6 +428,15 @@ export default function RoomsPage() {
             >
               {filteredRooms.map((room, index) => {
                 const statusConfig = getStatusConfig(room.status)
+                const coverImage =
+                  Array.isArray(room.photo_urls) && room.photo_urls.length > 0
+                    ? room.photo_urls[0]
+                    : (room as any).cover_image_url
+                const guests = typeof room.max_guests === 'number' ? room.max_guests : (room as any).capacity
+                const price =
+                  typeof room.base_price_per_night === 'number'
+                    ? room.base_price_per_night
+                    : (room as any).base_price
                 
                 return (
                   <motion.div
@@ -439,9 +448,9 @@ export default function RoomsPage() {
                     className="card overflow-hidden cursor-pointer group"
                   >
                     {/* Image */}
-                    {room.images && room.images.length > 0 ? (
+                    {coverImage ? (
                       <img
-                        src={getListingCardImageUrl(room.images[0])}
+                        src={getListingCardImageUrl(coverImage)}
                         alt={room.name || room.room_number}
                         className="w-full h-48 object-cover"
                         loading="lazy"
@@ -476,14 +485,14 @@ export default function RoomsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Users size={16} className="text-indigo-600" />
-                          <span>{room.capacity} pers.</span>
+                          <span>{guests ?? '—'} pers.</span>
                         </div>
                       </div>
 
                       <div className="border-t pt-4 mb-4">
                         <p className="text-sm text-gray-500 mb-1">Prix par nuit</p>
                         <p className="text-2xl font-bold text-indigo-600">
-                          {formatPrice(room.base_price)} <span className="text-sm">FCFA</span>
+                          {price ? formatPrice(price) : '—'} <span className="text-sm">FCFA</span>
                         </p>
                       </div>
 
