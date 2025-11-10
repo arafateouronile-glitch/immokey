@@ -69,6 +69,7 @@ interface DisplayListing {
     full_name?: string | null
     phone?: string | null
     email?: string | null
+    company_name?: string | null
     avatar_url?: string | null
   } | null
 }
@@ -210,9 +211,10 @@ export default function ListingDetailPage() {
   })
 
   const owner = displayListing.user_profiles
-  const ownerName = owner?.full_name || 'Propriétaire'
-  const ownerPhone = owner?.phone || '+225 01 02 03 04'
-  const ownerEmail = owner?.email || 'contact@immokey.app'
+  const ownerName = owner?.full_name?.trim() || 'Annonceur'
+  const ownerCompany = owner?.company_name?.trim() || null
+  const ownerPhone = owner?.phone?.trim() || null
+  const ownerEmail = owner?.email?.trim() || null
   const ownerAvatar = owner?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=0D8ABC&color=fff`
 
   return (
@@ -488,7 +490,7 @@ export default function ListingDetailPage() {
                   />
                   <div>
                     <p className="font-bold text-neutral-900">{ownerName}</p>
-                    <p className="text-sm text-neutral-600">Annonceur</p>
+                    <p className="text-sm text-neutral-600">{ownerCompany || 'Annonceur'}</p>
                   </div>
                 </div>
 
@@ -503,24 +505,36 @@ export default function ListingDetailPage() {
                       <MessageSquare className="h-5 w-5" />
                       Envoyer un message
                     </motion.button>
-                    <motion.a
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      href={`tel:${ownerPhone}`}
-                      className="w-full px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Phone className="h-5 w-5" />
-                      Appeler
-                    </motion.a>
-                    <motion.a
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      href={`mailto:${ownerEmail}`}
-                      className="w-full px-6 py-3 bg-neutral-100 text-neutral-800 rounded-xl font-semibold hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Mail className="h-5 w-5" />
-                      {ownerEmail}
-                    </motion.a>
+                    {ownerPhone ? (
+                      <motion.a
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        href={`tel:${ownerPhone}`}
+                        className="w-full px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Phone className="h-5 w-5" />
+                        Appeler {ownerPhone}
+                      </motion.a>
+                    ) : (
+                      <div className="w-full px-6 py-3 bg-neutral-100 text-neutral-500 rounded-xl font-medium text-center">
+                        Téléphone non renseigné
+                      </div>
+                    )}
+                    {ownerEmail ? (
+                      <motion.a
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        href={`mailto:${ownerEmail}`}
+                        className="w-full px-6 py-3 bg-neutral-100 text-neutral-800 rounded-xl font-semibold hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Mail className="h-5 w-5" />
+                        {ownerEmail}
+                      </motion.a>
+                    ) : (
+                      <div className="w-full px-6 py-3 bg-neutral-100 text-neutral-500 rounded-xl font-medium text-center">
+                        Email non renseigné
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <form onSubmit={handleSubmitContact} className="space-y-4">

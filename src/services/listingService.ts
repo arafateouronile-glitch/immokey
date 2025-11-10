@@ -142,7 +142,7 @@ export async function getListing(id: string): Promise<any> {
   try {
     const { data, error } = await supabase
       .from('listings')
-      .select('*, listing_images(*), user_profiles(*)')
+      .select('*, listing_images(*), user_profiles(full_name, phone, email, company_name, avatar_url)')
       .eq('id', id)
       .single()
 
