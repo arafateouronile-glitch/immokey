@@ -33,7 +33,7 @@ export async function uploadEstablishmentImage(
 
     // Générer un nom de fichier unique
     const fileExt = file.name.split('.').pop()
-    const fileName = `establishments/${establishmentId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    const fileName = `${user.id}/${establishmentId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
 
     // Upload vers Supabase Storage
     const { data, error } = await supabase.storage
