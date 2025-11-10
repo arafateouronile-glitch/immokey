@@ -211,10 +211,10 @@ export default function ListingDetailPage() {
   })
 
   const owner = displayListing.user_profiles
-  const ownerName = owner?.full_name?.trim() || 'Annonceur'
+  const ownerName = owner?.full_name?.trim() || owner?.company_name?.trim() || 'Nom non renseigné'
   const ownerCompany = owner?.company_name?.trim() || null
   const ownerPhone = owner?.phone?.trim() || null
-  const ownerEmail = owner?.email?.trim() || null
+  const ownerEmail = null
   const ownerAvatar = owner?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=0D8ABC&color=fff`
 
   return (
@@ -490,7 +490,11 @@ export default function ListingDetailPage() {
                   />
                   <div>
                     <p className="font-bold text-neutral-900">{ownerName}</p>
-                    <p className="text-sm text-neutral-600">{ownerCompany || 'Annonceur'}</p>
+                    {ownerCompany ? (
+                      <p className="text-sm text-neutral-600">{ownerCompany}</p>
+                    ) : (
+                      <p className="text-sm text-neutral-500">Particulier</p>
+                    )}
                   </div>
                 </div>
 
