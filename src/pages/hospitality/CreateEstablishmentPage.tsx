@@ -63,24 +63,6 @@ export default function CreateEstablishmentPage() {
     },
   })
 
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      const redirectPath = isEditMode
-        ? `/hotellerie/etablissements/modifier/${establishmentId}`
-        : '/hotellerie/etablissements/nouveau'
-      navigate('/connexion', { state: { from: redirectPath } })
-      return
-    }
-
-    if (isEditMode && establishmentId) {
-      loadEstablishment(establishmentId)
-    } else {
-      setInitialLoading(false)
-    }
-  }, [user, authLoading, navigate, isEditMode, establishmentId, loadEstablishment])
-
   const loadEstablishment = useCallback(async (id: string) => {
     try {
       setInitialLoading(true)
@@ -120,6 +102,24 @@ export default function CreateEstablishmentPage() {
     }
     setInitialLoading(false)
   }, [reset, navigate])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      const redirectPath = isEditMode
+        ? `/hotellerie/etablissements/modifier/${establishmentId}`
+        : '/hotellerie/etablissements/nouveau'
+      navigate('/connexion', { state: { from: redirectPath } })
+      return
+    }
+
+    if (isEditMode && establishmentId) {
+      loadEstablishment(establishmentId)
+    } else {
+      setInitialLoading(false)
+    }
+  }, [user, authLoading, navigate, isEditMode, establishmentId, loadEstablishment])
 
   const onSubmit = async (data: EstablishmentForm) => {
     if (!user) {
