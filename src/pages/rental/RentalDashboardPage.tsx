@@ -9,7 +9,8 @@ import {
   Percent, Clock, MapPin
 } from 'lucide-react'
 import { getManagedProperties, getManagedPropertiesStats } from '@/services/rental/managedPropertyService'
-import type { ManagedProperty } from '@/types/rental'
+import { getAllPayments } from '@/services/rental/paymentService'
+import type { ManagedProperty, Payment } from '@/types/rental'
 
 export default function RentalDashboardPage() {
   const navigate = useNavigate()
@@ -27,14 +28,9 @@ export default function RentalDashboardPage() {
     { type: 'document', tenant: 'Jean Martin', property: 'Maison Cocody', action: 'Bail signé', time: '5h' },
     { type: 'maintenance', property: 'Studio Plateau', issue: 'Réparation plomberie', time: '1j' },
   ])
-  const [monthlyRevenue] = useState([
-    { month: 'Jan', revenue: 2500000 },
-    { month: 'Fév', revenue: 2700000 },
-    { month: 'Mar', revenue: 2600000 },
-    { month: 'Avr', revenue: 2900000 },
-    { month: 'Mai', revenue: 3100000 },
-    { month: 'Juin', revenue: 3200000 },
-  ])
+  const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number }[]>([])
+  const [currentRevenue, setCurrentRevenue] = useState(0)
+  const [revenueTrend, setRevenueTrend] = useState<number | null>(0)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -47,18 +43,64 @@ export default function RentalDashboardPage() {
     }
   }, [user, authLoading, navigate])
 
+  const computeMonthlyRevenue = (payments: Payment[]) => {
+    const now = new Date()
+    const sumByMonth = new Map<string, number>()
+
+    payments.forEach((payment) => {
+      const paymentDate = payment.payment_date ? new Date(payment.payment_date) : new Date(payment.period_year, payment.period_month - 1, 1)
+      if (Number.isNaN(paymentDate.getTime())) {
+        return
+      }
+      const key = `${paymentDate.getFullYear()}-${paymentDate.getMonth()}`
+      const currentSum = sumByMonth.get(key) || 0
+      sumByMonth.set(key, currentSum + Number(payment.amount || 0))
+    })
+
+    const formatter = new Intl.DateTimeFormat('fr-FR', { month: 'short' })
+    const results: { month: string; revenue: number }[] = []
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${date.getFullYear()}-${date.getMonth()}`
+      const rawLabel = formatter.format(date)
+      const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1).replace('.', '')
+      results.push({ month: label, revenue: sumByMonth.get(key) || 0 })
+    }
+
+    return results
+  }
+
   const fetchData = async () => {
     if (!user) return
 
     setLoading(true)
     setError(null)
     try {
-      const [propertiesData, statsData] = await Promise.all([
+      const [propertiesData, statsData, paymentsData] = await Promise.all([
         getManagedProperties(),
         getManagedPropertiesStats(),
+        getAllPayments(),
       ])
       setProperties(propertiesData)
       setStats(statsData)
+
+      const revenueData = computeMonthlyRevenue(paymentsData)
+      setMonthlyRevenue(revenueData)
+
+      const current = revenueData.length ? revenueData[revenueData.length - 1].revenue : 0
+      const previous = revenueData.length > 1 ? revenueData[revenueData.length - 2].revenue : 0
+
+      setCurrentRevenue(current)
+
+      if (previous > 0) {
+        const trendValue = ((current - previous) / previous) * 100
+        setRevenueTrend(trendValue)
+      } else if (previous === 0 && current > 0) {
+        setRevenueTrend(null)
+      } else {
+        setRevenueTrend(0)
+      }
     } catch (err: any) {
       console.error('Error fetching rental data:', err)
       setError('Erreur lors du chargement des données')
@@ -71,7 +113,7 @@ export default function RentalDashboardPage() {
     return new Intl.NumberFormat('fr-FR').format(price)
   }
 
-  const maxRevenue = Math.max(...monthlyRevenue.map(m => m.revenue))
+  const maxRevenue = monthlyRevenue.length ? Math.max(...monthlyRevenue.map((m) => m.revenue)) : 0
 
   if (authLoading || loading) {
     return (
@@ -309,16 +351,26 @@ export default function RentalDashboardPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Total ce mois</p>
-                <p className="text-2xl font-bold text-green-600">{formatPrice(3200000)} FCFA</p>
-                <div className="flex items-center justify-end gap-1 text-green-600 text-sm mt-1">
-                  <ArrowUpRight size={16} />
-                  <span>+12%</span>
-                </div>
+                <p className="text-2xl font-bold text-green-600">{formatPrice(currentRevenue)} FCFA</p>
+                {revenueTrend === null ? (
+                  <div className="text-xs text-gray-500 mt-2 italic">Nouveaux revenus ce mois</div>
+                ) : (
+                  <div
+                    className={`flex items-center justify-end gap-1 text-sm mt-1 ${
+                      (revenueTrend || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {(revenueTrend || 0) >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                    <span>
+                      {(revenueTrend || 0) >= 0 ? '+' : ''}{(revenueTrend || 0).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="relative h-64">
               {monthlyRevenue.map((month, index) => {
-                const height = (month.revenue / maxRevenue) * 100
+                const height = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0
                 return (
                   <motion.div
                     key={index}
