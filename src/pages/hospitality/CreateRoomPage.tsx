@@ -9,7 +9,6 @@ import { createRoom } from '@/services/hospitality/roomService'
 import { getEstablishment } from '@/services/hospitality/establishmentService'
 import AmenitiesSelector from '@/components/forms/AmenitiesSelector'
 import ImageUploader from '@/components/forms/ImageUploader'
-import { uploadEstablishmentImages } from '@/services/hospitality/establishmentImageService'
 
 const roomSchema = z.object({
   room_number: z.string().min(1, 'Le numéro de chambre est requis'),
@@ -37,7 +36,7 @@ export default function CreateRoomPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
-  const [selectedImages, setSelectedImages] = useState<File[]>([])
+  const [selectedImages, setSelectedImages] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState<string>('')
 
   const {
@@ -113,15 +112,8 @@ export default function CreateRoomPage() {
         currency: data.currency || 'FCFA',
         amenities: selectedAmenities,
         notes: data.notes || undefined,
+        photo_urls: selectedImages,
       })
-
-      // 2. Uploader les images
-      if (selectedImages.length > 0) {
-        setUploadProgress(`Upload de ${selectedImages.length} photo(s)...`)
-        const photoUrls = await uploadEstablishmentImages(selectedImages, room.id)
-        const { updateRoom } = await import('@/services/hospitality/roomService')
-        await updateRoom(room.id, { photo_urls: photoUrls } as any)
-      }
 
       setUploadProgress('Terminé !')
 
@@ -395,6 +387,7 @@ export default function CreateRoomPage() {
             images={selectedImages}
             onImagesChange={setSelectedImages}
             maxImages={10}
+            bucket="listing-images"
           />
         </div>
 

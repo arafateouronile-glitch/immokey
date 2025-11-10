@@ -17,6 +17,7 @@ import { getRoom, updateRoom, deleteRoom } from '@/services/hospitality/roomServ
 import { getGalleryImageUrl } from '@/utils/imageOptimizer'
 import type { HospitalityRoom } from '@/types/hospitality'
 import AmenitiesSelector from '@/components/forms/AmenitiesSelector'
+import ImageUploader from '@/components/forms/ImageUploader'
 
 export default function RoomDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -46,6 +47,7 @@ export default function RoomDetailPage() {
     notes: '',
   })
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
+  const [photos, setPhotos] = useState<string[]>([])
 
   useEffect(() => {
     const stateEstablishmentId = (location.state as any)?.establishmentId
@@ -87,6 +89,12 @@ export default function RoomDetailPage() {
         notes: data.notes || '',
       })
       setSelectedAmenities(data.amenities || [])
+      const initialPhotos = Array.isArray(data.photo_urls)
+        ? data.photo_urls
+        : data.photo_urls
+        ? [data.photo_urls as unknown as string]
+        : []
+      setPhotos(initialPhotos)
     } catch (err: any) {
       console.error('Error fetching room:', err)
       setError('Erreur lors du chargement de la chambre')
@@ -120,10 +128,17 @@ export default function RoomDetailPage() {
         currency: formData.currency,
         amenities: selectedAmenities,
         notes: formData.notes || undefined,
+        photo_urls: photos,
       }
 
       const updated = await updateRoom(id, updates)
       setRoom(updated)
+      const updatedPhotos = Array.isArray(updated.photo_urls)
+        ? updated.photo_urls
+        : updated.photo_urls
+        ? [updated.photo_urls as unknown as string]
+        : []
+      setPhotos(updatedPhotos)
       setIsEditing(false)
     } catch (err: any) {
       console.error('Error updating room:', err)
@@ -150,6 +165,12 @@ export default function RoomDetailPage() {
       notes: room.notes || '',
     })
     setSelectedAmenities(room.amenities || [])
+    const originalPhotos = Array.isArray(room.photo_urls)
+      ? room.photo_urls
+      : room.photo_urls
+      ? [room.photo_urls as unknown as string]
+      : []
+    setPhotos(originalPhotos)
     setIsEditing(false)
   }
 
@@ -317,16 +338,54 @@ export default function RoomDetailPage() {
         </div>
       )}
 
-      {/* Photo principale */}
-      {room.photo_urls && room.photo_urls.length > 0 && (
-        <div className="card mb-6 p-0 overflow-hidden">
-          <img
-            src={getGalleryImageUrl(room.photo_urls[0], 'large')}
-            alt={room.name || room.room_number}
-            className="w-full h-64 md:h-96 object-cover"
-          />
+      {/* Photos */}
+      <div className="card mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-neutral-900">Photos</h2>
+          {!isEditing && photos.length > 0 && (
+            <span className="text-sm text-neutral-500">{photos.length} photo(s)</span>
+          )}
         </div>
-      )}
+
+        {isEditing ? (
+          <ImageUploader
+            images={photos}
+            onImagesChange={setPhotos}
+            maxImages={20}
+            bucket="listing-images"
+          />
+        ) : photos.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-neutral-500 text-sm">
+            Aucune photo n'est associée à cette chambre pour le moment.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl">
+              <img
+                src={getGalleryImageUrl(photos[0], 'large')}
+                alt={room.name || room.room_number}
+                className="w-full h-64 md:h-96 object-cover"
+              />
+            </div>
+            {photos.length > 1 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {photos.slice(1).map((photo, index) => (
+                  <div
+                    key={photo + index}
+                    className="overflow-hidden rounded-xl border border-neutral-200"
+                  >
+                    <img
+                      src={getGalleryImageUrl(photo, 'medium')}
+                      alt={`${room.name || room.room_number} - ${index + 2}`}
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Contenu principal */}
