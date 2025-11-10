@@ -31,6 +31,9 @@ export default function RentalDashboardPage() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; revenue: number }[]>([])
   const [currentRevenue, setCurrentRevenue] = useState(0)
   const [revenueTrend, setRevenueTrend] = useState<number | null>(0)
+  const [propertyRevenue, setPropertyRevenue] = useState<
+    { id: string; name: string; amount: number; percentage: number }[]
+  >([])
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -101,6 +104,37 @@ export default function RentalDashboardPage() {
       } else {
         setRevenueTrend(0)
       }
+
+      const totalsByProperty = new Map<string, number>()
+
+      paymentsData.forEach((payment) => {
+        if (!payment.managed_property_id) return
+        const currentAmount = totalsByProperty.get(payment.managed_property_id) || 0
+        totalsByProperty.set(payment.managed_property_id, currentAmount + Number(payment.amount || 0))
+      })
+
+      const totalPaidAcrossProperties = Array.from(totalsByProperty.values()).reduce(
+        (sum, value) => sum + value,
+        0
+      )
+
+      const propertyBreakdown = Array.from(totalsByProperty.entries())
+        .map(([propertyId, amount]) => {
+          const property = propertiesData.find((p) => p.id === propertyId)
+          const name = property?.name || property?.address || 'Bien sans nom'
+          const percentage = totalPaidAcrossProperties > 0
+            ? (amount / totalPaidAcrossProperties) * 100
+            : 0
+          return {
+            id: propertyId,
+            name,
+            amount,
+            percentage,
+          }
+        })
+        .sort((a, b) => b.amount - a.amount)
+
+      setPropertyRevenue(propertyBreakdown)
     } catch (err: any) {
       console.error('Error fetching rental data:', err)
       setError('Erreur lors du chargement des données')
@@ -446,6 +480,53 @@ export default function RentalDashboardPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Répartition des revenus par bien */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="card mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-neutral-900">Répartition des loyers par bien</h2>
+            <span className="text-sm text-neutral-500">{propertyRevenue.length} bien(s)</span>
+          </div>
+          {propertyRevenue.length === 0 ? (
+            <div className="py-10 text-center text-neutral-500">
+              Aucun paiement enregistré pour le moment
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {propertyRevenue.slice(0, 5).map((item, index) => (
+                <div key={item.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-neutral-900">{item.name}</p>
+                      <p className="text-xs text-neutral-500">{formatPrice(item.amount)} FCFA</p>
+                    </div>
+                    <span className="text-sm font-medium text-primary-600">
+                      {item.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-neutral-200 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${item.percentage}%` }}
+                      transition={{ delay: 1 + index * 0.1, duration: 0.6 }}
+                      className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-700"
+                    />
+                  </div>
+                </div>
+              ))}
+              {propertyRevenue.length > 5 && (
+                <div className="text-xs text-neutral-500">
+                  + {propertyRevenue.length - 5} bien(s) additionnel(s)
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
 
         {/* Liste des biens récents */}
         <motion.div
